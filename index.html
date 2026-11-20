@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="ClassHop: check whether your cross-registered week at Harvard, MIT and Fletcher actually works.">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>ClassHop</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: a transit-board planner. Inputs on the left, the week drawn like a line map on the right; legs between classes are the "routes". */
+:root{
+  --paper:#F4F6F5; --panel:#FFFFFF; --ink:#141B19; --muted:#56625E; --line:#D9DFDC; --soft:#EBEFED;
+  --accent:#2438C9; --accent-ink:#FFFFFF;
+  --ok:#1C7F47; --tight:#A86A00; --late:#C22F38; --clash:#7438B8;
+  --ok-bg:#E3F3E9; --tight-bg:#FBF0DA; --late-bg:#FBE4E5; --clash-bg:#EFE5FA;
+  --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0F1413; --panel:#171E1C; --ink:#E6ECE9; --muted:#9BA8A3; --line:#2A3431; --soft:#1E2725;
+  --accent:#8C9BFF; --accent-ink:#0F1413;
+  --ok:#53C786; --tight:#F0B44C; --late:#FF7277; --clash:#B78CF5;
+  --ok-bg:#16301F; --tight-bg:#33270F; --late-bg:#3A1A1C; --clash-bg:#2A1D3D;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0F1413; --panel:#171E1C; --ink:#E6ECE9; --muted:#9BA8A3; --line:#2A3431; --soft:#1E2725;
+  --accent:#8C9BFF; --accent-ink:#0F1413;
+  --ok:#53C786; --tight:#F0B44C; --late:#FF7277; --clash:#B78CF5;
+  --ok-bg:#16301F; --tight-bg:#33270F; --late-bg:#3A1A1C; --clash-bg:#2A1D3D;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.1}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+/* Header */
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;border-bottom:3px solid var(--ink);padding-bottom:14px}
+.brand h1{font-size:clamp(30px,5vw,46px);font-weight:800;font-stretch:112%;letter-spacing:-.01em}
+.brand p{margin:6px 0 0;color:var(--muted);max-width:60ch}
+.deadline{display:flex;align-items:center;gap:10px;background:var(--ink);color:var(--paper);border-radius:999px;padding:8px 16px 8px 8px;font-size:13px}
+.deadline b{font-family:var(--f-mono);background:var(--paper);color:var(--ink);border-radius:999px;padding:4px 10px;font-size:13px;white-space:nowrap}
+
+.grid{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}.grid>.stack:last-child{order:-1}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
+.panel h2{font-size:18px;font-weight:700;font-stretch:105%;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.eyebrow{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.stack{display:flex;flex-direction:column;gap:14px}
+
+/* Class editor */
+.sample-note{background:var(--soft);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--muted)}
+.cls{border:1px solid var(--line);border-radius:8px;padding:10px;display:grid;grid-template-columns:1fr auto;gap:8px;position:relative}
+.cls .swatch{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+.cls input[type=text]{width:100%;border:0;border-bottom:1px solid var(--line);background:transparent;padding:4px 2px;font-weight:600}
+.cls .row{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.cls select,.cls input[type=time]{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:4px 6px;font-size:13px}
+.cls select{max-width:100%}
+.days{display:flex;gap:4px}
+.day{border:1px solid var(--line);background:transparent;border-radius:6px;min-width:34px;padding:3px 0;font-size:12px;font-weight:600}
+.day[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.times{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.hint{grid-column:1/-1;font-size:12px;color:var(--muted)}
+.icon-btn{border:0;background:transparent;color:var(--muted);font-size:18px;line-height:1;padding:2px 6px;border-radius:6px}
+.icon-btn:hover{background:var(--soft);color:var(--ink)}
+.btn-row{display:flex;flex-wrap:wrap;gap:8px}
+.btn{border:1px solid var(--ink);background:transparent;border-radius:8px;padding:7px 12px;font-weight:600;font-size:14px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.ghost{border-color:var(--line);color:var(--muted)}
+.confirm{display:flex;gap:8px;align-items:center;font-size:13px}
+
+/* Settings */
+.seg{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid var(--ink);border-radius:8px;overflow:hidden}
+.hint-p{margin:-6px 0 0;font-size:12px;color:var(--muted)}
+/* Live Red Line */
+.live-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px}
+.live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--muted);margin-right:6px;vertical-align:1px}
+.live-dot.on{background:var(--late);box-shadow:0 0 0 3px var(--late-bg)}
+@media (prefers-reduced-motion:no-preference){.live-dot.on{animation:pulse 1.6s ease-in-out infinite}@keyframes pulse{50%{box-shadow:0 0 0 6px transparent}}}
+.stations{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:640px){.stations{grid-template-columns:minmax(0,1fr)}}
+.station{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.station h3{font-size:15px;font-weight:700;font-stretch:108%}
+.dir{display:flex;justify-content:space-between;gap:8px;font-size:13px}
+.dir span:first-child{color:var(--muted)}
+.dir .mins{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.alerts{display:flex;flex-direction:column;gap:8px}
+.alert{border-radius:8px;padding:8px 12px;font-size:13.5px;background:var(--late-bg)}
+.alert b{text-transform:capitalize}
+.live-note{margin-top:6px;font-size:13px;background:var(--late-bg);border-radius:6px;padding:6px 10px}
+.muted{color:var(--muted);font-size:13px;margin:0}
+.seg button{border:0;background:transparent;padding:7px 4px;font-size:13px;font-weight:600;border-left:1px solid var(--ink)}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.toggle{display:flex;align-items:flex-start;gap:10px;font-size:14px}
+.toggle input{margin-top:4px;accent-color:var(--accent)}
+.toggle small{display:block;color:var(--muted);font-size:12px}
+.margin-row{display:flex;align-items:center;gap:10px;font-size:14px}
+.margin-row input{flex:1;accent-color:var(--accent)}
+
+/* Summary */
+.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+@media (max-width:640px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat{border-radius:8px;padding:10px 12px;background:var(--soft);display:flex;flex-direction:column;gap:2px;min-width:0}
+.stat .n{font-family:var(--f-display);font-weight:800;font-size:28px;font-variant-numeric:tabular-nums;line-height:1}
+.stat .l{font-size:12px;color:var(--muted)}
+.stat.ok{background:var(--ok-bg)} .stat.ok .n{color:var(--ok)}
+.stat.tight{background:var(--tight-bg)} .stat.tight .n{color:var(--tight)}
+.stat.late{background:var(--late-bg)} .stat.late .n{color:var(--late)}
+.verdict{font-size:15px;margin:0}
+
+/* Board */
+.daytabs{display:none;gap:6px}
+.daytabs button{flex:1;border:1px solid var(--line);background:transparent;border-radius:8px;padding:6px 0;font-weight:600;font-size:13px;position:relative}
+.daytabs button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.daytabs .dot{position:absolute;top:4px;right:6px;width:7px;height:7px;border-radius:50%}
+.board-scroll{overflow-x:auto}
+.board{display:grid;grid-template-columns:44px repeat(5,minmax(110px,1fr));gap:0 8px;min-width:640px}
+.colhead{font-family:var(--f-display);font-weight:700;font-stretch:110%;font-size:14px;padding:4px 2px 8px;border-bottom:2px solid var(--ink);text-transform:uppercase;letter-spacing:.06em}
+.axis,.col{position:relative}
+.axis span{position:absolute;right:4px;transform:translateY(-50%);font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.col{border-left:1px dashed var(--line)}
+.hour{position:absolute;left:0;right:0;border-top:1px solid var(--soft)}
+.lunchband{position:absolute;left:0;right:0;background:repeating-linear-gradient(135deg,transparent 0 6px,var(--soft) 6px 7px)}
+.block{position:absolute;left:6px;right:6px;border-radius:6px;padding:4px 7px;color:#fff;overflow:hidden;font-size:12px;line-height:1.25;z-index:1}
+.block b{display:block;font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.block .t{font-family:var(--f-mono);font-size:10.5px;opacity:.9}
+.block .code{font-family:var(--f-display);font-weight:800;font-size:10px;letter-spacing:.08em;opacity:.95}
+.route{position:absolute;left:50%;width:4px;transform:translateX(-50%);border-radius:2px;z-index:2}
+.route.ok{background:var(--ok)} .route.tight{background:var(--tight)} .route.late,.route.clash{background:var(--late)}
+.chip{position:absolute;left:50%;transform:translate(-50%,-50%);z-index:3;font-family:var(--f-mono);font-size:10.5px;font-weight:600;white-space:nowrap;border-radius:999px;padding:2px 7px;border:1.5px solid;background:var(--panel)}
+.chip.ok{color:var(--ok);border-color:var(--ok)} .chip.tight{color:var(--tight);border-color:var(--tight)} .chip.late{color:var(--late);border-color:var(--late)} .chip.clash{color:var(--clash);border-color:var(--clash)}
+.empty-day{position:absolute;top:40%;left:0;right:0;text-align:center;color:var(--muted);font-size:12px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+@media (max-width:640px){
+  .daytabs{display:flex}
+  .board{grid-template-columns:44px minmax(0,1fr);min-width:0}
+  .board .colhead:not(.active),.board .col:not(.active){display:none}
+}
+
+/* Legs */
+.legs{display:flex;flex-direction:column;gap:10px}
+.leg{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--panel)}
+.badge{align-self:start;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:999px;padding:3px 9px;white-space:nowrap}
+.badge.ok{background:var(--ok-bg);color:var(--ok)} .badge.tight{background:var(--tight-bg);color:var(--tight)} .badge.late{background:var(--late-bg);color:var(--late)} .badge.clash{background:var(--clash-bg);color:var(--clash)}
+.leg .what{font-weight:600;min-width:0}
+.leg .math{grid-column:2;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.leg .fix{grid-column:2;font-size:13px}
+.leg .fix a{color:var(--accent)}
+.modes{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.mode-pill{font-family:var(--f-mono);font-size:11px;border-radius:6px;padding:2px 6px;border:1px solid var(--line)}
+.mode-pill.ok{border-color:var(--ok);color:var(--ok)} .mode-pill.tight{border-color:var(--tight);color:var(--tight)} .mode-pill.late{border-color:var(--late);color:var(--late)}
+details.more summary{cursor:pointer;font-weight:600;font-size:14px;padding:4px 0}
+.notes{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.notes li{font-size:14px;padding-left:14px;position:relative}
+.notes li::before{content:"";position:absolute;left:0;top:.6em;width:6px;height:6px;border-radius:50%;background:var(--muted)}
+.notes b{font-weight:600}
+.lunch-warn{font-size:14px;background:var(--tight-bg);color:var(--ink);border-radius:8px;padding:8px 12px}
+
+/* Sources */
+.src{overflow-x:auto}
+.src table{border-collapse:collapse;width:100%;font-size:13px;min-width:560px}
+.src th,.src td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.src th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.src a{color:var(--accent)}
+footer{font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;display:flex;flex-wrap:wrap;gap:6px 20px;justify-content:space-between}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 14px;border-radius:8px;font-size:14px;z-index:20}
+@media (prefers-reduced-motion:no-preference){.block,.chip{transition:top .25s ease,height .25s ease}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>ClassHop</h1>
+      <p>Cross-registering at HLS, HBS, MIT or Fletcher? Enter your week and see, before you commit, whether you can get from one class to the next in time.</p>
+    </div>
+    <div class="deadline" id="deadline"></div>
+  </header>
+
+  <div class="grid">
+    <!-- LEFT: inputs -->
+    <div class="stack">
+      <section class="panel stack" aria-labelledby="h-classes">
+        <h2 id="h-classes">Your classes <span class="eyebrow" id="count"></span></h2>
+        <div class="sample-note" id="sampleNote" hidden>This is a <b>sample week</b>. Edit it, or clear it and add your own classes from my.harvard and the MIT or Fletcher catalogs.</div>
+        <div class="stack" id="classList"></div>
+        <div class="btn-row">
+          <button class="btn primary" id="addBtn" type="button">+ Add class</button>
+          <button class="btn" id="sampleBtn" type="button">Try a sample week</button>
+          <span id="clearWrap"><button class="btn ghost" id="clearBtn" type="button">Clear all</button></span>
+        </div>
+      </section>
+
+      <section class="panel stack" aria-labelledby="h-travel">
+        <h2 id="h-travel">How you travel</h2>
+        <div class="seg" role="group" aria-label="Travel mode" id="modeSeg">
+          <button type="button" data-mode="best">Fastest</button>
+          <button type="button" data-mode="walk">Walk</button>
+          <button type="button" data-mode="bike">Bike</button>
+          <button type="button" data-mode="transit">T + walk</button>
+          <button type="button" data-mode="shuttle">Shuttle</button>
+        </div>
+        <p class="hint-p">Harvard shuttle times cover trips between Cambridge and the SEC in Allston. Shuttles don't go to MIT or Fletcher.</p>
+        <label class="toggle"><input type="checkbox" id="winter"><span>Boston winter<small>Adds 25% to walking and cycling for snow, ice and layers.</small></span></label>
+        <label class="toggle"><input type="checkbox" id="mitTime"><span>Apply MIT time<small>MIT classes start 5 minutes after the listed time.</small></span></label>
+        <div class="margin-row"><label for="margin">Comfortable if spare ≥</label><input type="range" id="margin" min="0" max="20" step="1"><span class="mono" id="marginVal"></span></div>
+        <div class="margin-row"><label for="wait">Average wait for the T</label><input type="range" id="wait" min="3" max="15" step="1"><span class="mono" id="waitVal"></span></div>
+      </section>
+    </div>
+
+    <!-- RIGHT: results -->
+    <div class="stack">
+      <section class="panel stack" aria-labelledby="h-week">
+        <h2 id="h-week">Your week, as routes</h2>
+        <p class="verdict" id="verdict"></p>
+        <div class="stats" id="stats"></div>
+        <div class="daytabs" id="dayTabs" role="group" aria-label="Day"></div>
+        <div class="board-scroll"><div class="board" id="board"></div></div>
+        <div class="legend" id="legend"></div>
+      </section>
+
+      <section class="panel stack" aria-labelledby="h-live">
+        <div class="live-head"><h2 id="h-live"><span class="live-dot" id="liveDot"></span>Red Line right now</h2><span class="muted" id="liveTime"></span></div>
+        <div id="liveBody"><p class="muted">Loading live departures from the MBTA…</p></div>
+      </section>
+
+      <section class="panel stack" aria-labelledby="h-legs">
+        <h2 id="h-legs">Fix these first <button class="btn ghost" id="copyBtn" type="button">Copy summary</button></h2>
+        <div id="lunch"></div>
+        <div class="legs" id="problemLegs"></div>
+        <details class="more"><summary id="okSummary"></summary><div class="legs" id="okLegs" style="margin-top:10px"></div></details>
+      </section>
+
+      <section class="panel stack" aria-labelledby="h-notes">
+        <h2 id="h-notes">Rules for the schools in your week</h2>
+        <ul class="notes" id="notes"></ul>
+      </section>
+
+      <section class="panel stack" aria-labelledby="h-src">
+        <details>
+          <summary><h2 id="h-src" style="display:inline">How the times are worked out</h2></summary>
+          <div class="stack" style="margin-top:12px">
+            <p style="margin:0;font-size:14px">Spare time = the gap between one class ending and the next starting, minus the travel time. Walking is estimated from the distance between buildings × 1.3 for street routes at 4.8 km/h; cycling at 15 km/h plus 3 minutes to unlock and lock. "T + walk" = walk to the station, average wait, ride, walk from the station. Between Harvard buildings the tool uses walking or cycling; for Harvard shuttles, open the trip in Citymapper. The first class of each day is not checked, because the tool doesn't know where you start.</p>
+            <div class="src"><table>
+              <thead><tr><th>What</th><th>Value used</th><th>Source</th></tr></thead>
+              <tbody>
+                <tr><td>Red Line ride, Harvard to Kendall/MIT</td><td class="mono">8 min</td><td><a href="https://www.hodp.org/project/mbta-showdown-best-college-mbta-station/" target="_blank" rel="noopener">Harvard Open Data Project</a></td></tr>
+                <tr><td>Average Red Line wait at Harvard</td><td class="mono">9 min (adjustable)</td><td><a href="https://www.hodp.org/project/mbta-showdown-best-college-mbta-station/" target="_blank" rel="noopener">Harvard Open Data Project</a> (2021 mean 9 min 15 s)</td></tr>
+                <tr><td>Red Line ride, Harvard to Davis</td><td class="mono">9 min</td><td><a href="https://www.rome2rio.com/s/Harvard-Square/Davis-Square" target="_blank" rel="noopener">Rome2rio</a></td></tr>
+                <tr><td>Walk, Davis to Fletcher (160 Packard Ave)</td><td class="mono">15 min</td><td><a href="https://fletcher.tufts.edu/directions" target="_blank" rel="noopener">Fletcher directions</a></td></tr>
+                <tr><td>MIT time</td><td class="mono">+5 min</td><td><a href="https://oge.mit.edu/mit-time/" target="_blank" rel="noopener">MIT Office of Graduate Education</a></td></tr>
+                <tr><td>FAS Cambridge and Allston time grids</td><td>Cambridge starts on :00/:30; Allston 45 min later</td><td><a href="https://registrar.fas.harvard.edu/fas-schedule.md" target="_blank" rel="noopener">FAS Registrar</a></td></tr>
+                <tr><td>Spring 2027 deadlines</td><td>Add and cross-registration petitions due 2 Feb (full term, Spring 1) and 30 Mar (Spring 2)</td><td><a href="https://www.hks.harvard.edu/educational-programs/academic-calendars-policies/current-academic-calendar" target="_blank" rel="noopener">HKS academic calendar</a></td></tr>
+                <tr><td>HBS attendance rule</td><td>Attendance at all sessions required</td><td><a href="https://www.hbs.edu/mba/registrar/crossregistration/crossregistration-courseplanning" target="_blank" rel="noopener">HBS Registrar</a></td></tr>
+                <tr><td>Fletcher petitions</td><td>Signed PDF petition; follow both calendars</td><td><a href="https://fletcher.tufts.edu/programs/cross-registration/non-fletcher-students" target="_blank" rel="noopener">Fletcher Registrar</a></td></tr>
+                <tr><td>Live Red Line departures and alerts</td><td>Refreshed every minute</td><td><a href="https://www.mbta.com/developers/v3-api" target="_blank" rel="noopener">MBTA V3 API</a>, through a server-side function that keeps the key private</td></tr>
+                <tr><td>Harvard shuttle frequency (Cambridge ↔ SEC)</td><td class="mono">every 15 min 7:30–15:45 (30 min 11:30–12:30); every 20 min after 15:45; ride 8–11 min (estimate)</td><td><a href="https://transportation.harvard.edu/harvard-shuttle/shuttle-schedule-and-routes" target="_blank" rel="noopener">Harvard shuttle schedule</a> (SEC Express, Allston Loop)</td></tr>
+                <tr><td>Harvard shuttles</td><td>Tracked in Citymapper since Aug 2026</td><td><a href="https://transportation.harvard.edu/news/2026/08/harvard-shuttles-launch-citymapper" target="_blank" rel="noopener">Harvard Transportation</a></td></tr>
+              </tbody>
+            </table></div>
+          </div>
+        </details>
+      </section>
+    </div>
+  </div>
+
+  <footer>
+    <span>Unofficial student project for HKS DPI-681 by Elsa Nisa. Not affiliated with or endorsed by Harvard, MIT or Tufts.</span>
+    <span>Your schedule stays in this browser. Nothing is sent anywhere.</span>
+  </footer>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+// ---------- Data ----------
+const STATIONS = {
+  harvard:{lat:42.3734,lon:-71.1189,name:"Harvard"},
+  kendall:{lat:42.3625,lon:-71.0862,name:"Kendall/MIT"},
+  davis:{lat:42.3967,lon:-71.1218,name:"Davis"}
+};
+const RIDE = {"harvard-kendall":8,"davis-harvard":9,"davis-kendall":17}; // keys are station names sorted A–Z
+const MBTA_STOP = {harvard:"place-harsq",kendall:"place-knncl",davis:"place-dav"};
+// Harvard shuttle (SEC Express / Allston Loop) between Cambridge stops and the SEC in Allston.
+// Ride times are estimates; Harvard publishes frequencies, not run times.
+const SHUTTLE_STOPS = [
+  {name:"Harvard Square",lat:42.3732,lon:-71.1190,ride:8},
+  {name:"Sever Gate",lat:42.3743,lon:-71.1149,ride:10},
+  {name:"Lamont Library",lat:42.3727,lon:-71.1155,ride:11}
+];
+function shuttleHeadway(t){ // minutes between buses at departure time t (minutes after midnight)
+  if(t>=450 && t<945) return (t>=690 && t<750) ? 30 : 15; // SEC Express 7:30–15:45, reduced 11:30–12:30
+  if(t>=945 && t<1350) return 20; // Allston Loop every 20 min, 15:00–22:30
+  return null;
+}
+const CAMPUS = {
+  hks:{code:"HKS",name:"HKS",full:"Harvard Kennedy School",lat:42.3716,lon:-71.1219,station:"harvard",color:"#0E6763"},
+  yard:{code:"FAS",name:"FAS · Harvard Yard",full:"Harvard Yard",lat:42.3744,lon:-71.1162,station:"harvard",color:"#3647A6",grid:"FAS Cambridge classes start on the hour or half hour (9:00, 10:30, 12:00 …)."},
+  sci:{code:"SCI",name:"FAS · Science Center",full:"Science Center",lat:42.3765,lon:-71.1167,station:"harvard",color:"#5A35A8",grid:"FAS Cambridge classes start on the hour or half hour (9:00, 10:30, 12:00 …)."},
+  hgse:{code:"HGSE",name:"HGSE · Appian Way",full:"Harvard Graduate School of Education",lat:42.3779,lon:-71.1223,station:"harvard",color:"#94590A"},
+  hls:{code:"HLS",name:"HLS",full:"Harvard Law School",lat:42.3784,lon:-71.1190,station:"harvard",color:"#8A2350"},
+  gsd:{code:"GSD",name:"GSD · Gund Hall",full:"Harvard Graduate School of Design",lat:42.3762,lon:-71.1135,station:"harvard",color:"#4F7019"},
+  hds:{code:"HDS",name:"HDS",full:"Harvard Divinity School",lat:42.3796,lon:-71.1142,station:"harvard",color:"#5E5185"},
+  hbs:{code:"HBS",name:"HBS · Allston",full:"Harvard Business School",lat:42.3655,lon:-71.1225,station:"harvard",color:"#1D6A3C"},
+  sec:{code:"SEAS",name:"SEAS · Allston (SEC)",full:"Science and Engineering Complex",lat:42.3637,lon:-71.1253,station:"harvard",color:"#0C6F93",grid:"FAS Allston classes start 45 minutes after Cambridge (9:45, 11:15, 12:45 …)."},
+  mit:{code:"MIT",name:"MIT · main campus",full:"MIT, 77 Massachusetts Ave",lat:42.3592,lon:-71.0935,station:"kendall",color:"#B23D27",mit:true},
+  sloan:{code:"SLOAN",name:"MIT Sloan (E62)",full:"MIT Sloan School of Management",lat:42.3607,lon:-71.0839,station:"kendall",color:"#8F355F",mit:true},
+  fletcher:{code:"FLETCHER",name:"Tufts Fletcher",full:"The Fletcher School, 160 Packard Ave, Medford",lat:42.4073,lon:-71.1210,station:"davis",stationWalk:15,color:"#24589C"}
+};
+const DAYS = ["Mon","Tue","Wed","Thu","Fri"];
+const SAMPLE = [
+  {name:"Policy Design Studio",campus:"hks",days:[0,2],start:"09:00",end:"10:15"},
+  {name:"Negotiation Workshop",campus:"hls",days:[0,2],start:"10:30",end:"11:45"},
+  {name:"Urban Systems Lab",campus:"mit",days:[0,2],start:"13:00",end:"14:30"},
+  {name:"Leadership Seminar",campus:"hks",days:[0,2],start:"14:45",end:"16:00"},
+  {name:"Microeconomics",campus:"hks",days:[1,3],start:"08:45",end:"10:00"},
+  {name:"International Negotiation",campus:"fletcher",days:[1],start:"10:30",end:"12:30"},
+  {name:"Data and Policy",campus:"hks",days:[1,3],start:"13:00",end:"14:15"},
+  {name:"Corporate Strategy",campus:"hbs",days:[3],start:"10:20",end:"11:40"},
+  {name:"Urban Design Studio",campus:"gsd",days:[4],start:"09:00",end:"12:00"}
+];
+const DEFAULT_SETTINGS = {mode:"best",winter:false,mitTime:true,margin:10,wait:9};
+const DEADLINES = [{date:"2027-02-02",label:"Spring 2027 add and cross-registration petitions due"},{date:"2027-03-30",label:"Spring 2 add and cross-registration petitions due"}];
+
+// ---------- State ----------
+let uid = 1;
+const withIds = list => list.map(c => ({...c, days:[...c.days], id:uid++}));
+let state = {classes:withIds(SAMPLE), settings:{...DEFAULT_SETTINGS}, isSample:true, day:0};
+try{
+  const saved = JSON.parse(localStorage.getItem("mitc-v1")||"null");
+  if(saved && Array.isArray(saved.classes)){
+    state.classes = withIds(saved.classes.filter(c=>CAMPUS[c.campus]));
+    state.settings = {...DEFAULT_SETTINGS, ...(saved.settings||{})};
+    state.isSample = !!saved.isSample;
+  }
+}catch(e){}
+function save(){
+  try{localStorage.setItem("mitc-v1",JSON.stringify({classes:state.classes.map(({id,...c})=>c),settings:state.settings,isSample:state.isSample}))}catch(e){}
+}
+
+// ---------- Travel model ----------
+const toMin = t => { if(!t) return null; const [h,m]=t.split(":").map(Number); return h*60+m; };
+const fmt = m => { const h=Math.floor(m/60), mm=String(Math.round(m%60)).padStart(2,"0"); return `${h}:${mm}`; };
+function km(a,b){
+  const R=6371, r=x=>x*Math.PI/180;
+  const dLa=r(b.lat-a.lat), dLo=r(b.lon-a.lon);
+  const h=Math.sin(dLa/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dLo/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
+}
+const walkMin = (a,b,s) => Math.max(2, Math.ceil(km(a,b)*1.3/4.8*60*(s.winter?1.25:1)));
+const bikeMin = (a,b,s) => Math.ceil(km(a,b)*1.3/15*60*(s.winter?1.25:1)) + 3;
+function stationWalk(c,s){ return c.stationWalk ? Math.ceil(c.stationWalk*(s.winter?1.25:1)) : walkMin(c,STATIONS[c.station],s); }
+function transitMin(a,b,s){
+  if(a.station===b.station) return null; // same area: walk instead
+  const key=[a.station,b.station].sort().join("-");
+  return stationWalk(a,s) + s.wait + RIDE[key] + stationWalk(b,s);
+}
+function shuttleMin(fromKey,toKey,s,t){
+  const toSEC = toKey==="sec", fromSEC = fromKey==="sec";
+  if(toSEC===fromSEC) return null;
+  const other = CAMPUS[toSEC?fromKey:toKey];
+  if(other.station!=="harvard") return null;
+  const h=shuttleHeadway(t); if(h==null) return null;
+  let best=null;
+  for(const st of SHUTTLE_STOPS){ const v=walkMin(other,st,s)+Math.ceil(h/2)+st.ride+1; if(best===null||v<best) best=v; }
+  return best;
+}
+function modes(fromKey,toKey,s,t){
+  const a=CAMPUS[fromKey], b=CAMPUS[toKey];
+  if(fromKey===toKey) return {walk:3,bike:3,transit:null,shuttle:null};
+  return {walk:walkMin(a,b,s), bike:bikeMin(a,b,s), transit:transitMin(a,b,s), shuttle:shuttleMin(fromKey,toKey,s,t)};
+}
+const MODE_KEYS = ["walk","bike","transit","shuttle"];
+const MODE_LABEL = {walk:"walk",bike:"bike",transit:"T + walk",shuttle:"Harvard shuttle"};
+const MODE_SHORT = {walk:"walk",bike:"bike",transit:"T",shuttle:"shuttle"};
+function pickTravel(m,s){
+  if(s.mode==="best"){
+    let best=null; for(const k of MODE_KEYS) if(m[k]!=null && (best===null || m[k]<m[best])) best=k;
+    return {mode:best,min:m[best]};
+  }
+  if(m[s.mode]==null) return {mode:"walk",min:m.walk,fallback:true};
+  return {mode:s.mode,min:m[s.mode]};
+}
+const statusOf = (spare,s) => spare<0 ? "late" : spare<s.margin ? "tight" : "ok";
+const STATUS_LABEL = {ok:"Comfortable",tight:"Tight",late:"Won't make it",clash:"Time clash"};
+
+function effStart(c,s){ const t=toMin(c.start); return t + (CAMPUS[c.campus].mit && s.mitTime ? 5 : 0); }
+function valid(c){ const a=toMin(c.start), b=toMin(c.end); return c.days.length && a!=null && b!=null && b>a; }
+
+function analyze(){
+  const s=state.settings, legs=[], byDay=[[],[],[],[],[]];
+  state.classes.filter(valid).forEach(c=>c.days.forEach(d=>byDay[d].push(c)));
+  byDay.forEach(list=>list.sort((x,y)=>effStart(x,s)-effStart(y,s)));
+  byDay.forEach((list,d)=>{
+    for(let i=0;i<list.length-1;i++){
+      const A=list[i], B=list[i+1];
+      const end=toMin(A.end), start=effStart(B,s), gap=start-end;
+      const m=modes(A.campus,B.campus,s,end);
+      if(gap<0){ legs.push({day:d,A,B,gap,status:"clash",m,travel:null}); continue; }
+      const tr=pickTravel(m,s), spare=gap-tr.min;
+      legs.push({day:d,A,B,gap,m,travel:tr,spare,status:statusOf(spare,s)});
+    }
+  });
+  // Lunch: a free 30-min window between 11:30 and 14:00 on days with classes in that window
+  const lunch=[];
+  byDay.forEach((list,d)=>{
+    if(!list.length) return;
+    const busy=list.map(c=>[effStart(c,s),toMin(c.end)]);
+    legs.filter(l=>l.day===d && l.travel).forEach(l=>busy.push([toMin(l.A.end),toMin(l.A.end)+l.travel.min]));
+    busy.sort((a,b)=>a[0]-b[0]);
+    const W0=690,W1=840; let cur=W0, best=0;
+    for(const [a,b] of busy){ if(b<=cur) continue; if(a>cur) best=Math.max(best,Math.min(a,W1)-cur); cur=Math.max(cur,b); if(cur>=W1) break; }
+    if(cur<W1) best=Math.max(best,W1-cur);
+    if(best<30) lunch.push({day:d,best});
+  });
+  return {legs,byDay,lunch};
+}
+
+// ---------- Rendering ----------
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]));
+const campusOptions = sel => Object.entries(CAMPUS).map(([k,c])=>`<option value="${k}"${k===sel?" selected":""}>${esc(c.name)}</option>`).join("");
+
+function renderClasses(){
+  $("sampleNote").hidden = !state.isSample;
+  $("count").textContent = state.classes.length ? `${state.classes.length} ${state.classes.length===1?"class":"classes"}` : "";
+  const list=$("classList");
+  if(!state.classes.length){ list.innerHTML=`<div class="sample-note">No classes yet. Add your first class, or load the sample week to see how it works.</div>`; return; }
+  list.innerHTML = state.classes.map(c=>{
+    const camp=CAMPUS[c.campus];
+    const bad = !valid(c);
+    const hint = [camp.grid, camp.mit ? "MIT lists times like 1:00; class really starts at 1:05." : ""].filter(Boolean).join(" ");
+    return `<div class="cls" data-id="${c.id}">
+      <div style="display:flex;align-items:center;gap:8px;min-width:0"><span class="swatch" style="background:${camp.color}"></span>
+        <input type="text" id="name-${c.id}" data-f="name" value="${esc(c.name)}" placeholder="Course name" aria-label="Course name"></div>
+      <button class="icon-btn" type="button" data-act="del" aria-label="Remove ${esc(c.name||"class")}">×</button>
+      <div class="row">
+        <select id="campus-${c.id}" data-f="campus" aria-label="School">${campusOptions(c.campus)}</select>
+        <div class="days" role="group" aria-label="Days">${DAYS.map((d,i)=>`<button type="button" class="day" data-day="${i}" aria-pressed="${c.days.includes(i)}">${d.slice(0,2)}</button>`).join("")}</div>
+      </div>
+      <div class="row times">
+        <input type="time" id="start-${c.id}" data-f="start" value="${c.start}" aria-label="Start time" step="300"> to
+        <input type="time" id="end-${c.id}" data-f="end" value="${c.end}" aria-label="End time" step="300">
+      </div>
+      ${bad?`<div class="hint" style="color:var(--late)">Pick at least one day and an end time after the start time.</div>`:hint?`<div class="hint">${esc(hint)}</div>`:""}
+    </div>`;
+  }).join("");
+}
+
+function renderSettings(){
+  const s=state.settings;
+  document.querySelectorAll("#modeSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===s.mode));
+  $("winter").checked=s.winter; $("mitTime").checked=s.mitTime;
+  $("margin").value=s.margin; $("marginVal").textContent=`${s.margin} min`;
+  $("wait").value=s.wait; $("waitVal").textContent=`${s.wait} min`;
+}
+
+function travelText(l){
+  if(!l.travel) return "";
+  const t=l.travel; return `${t.min} min ${MODE_LABEL[t.mode]}${t.fallback?` (no ${MODE_LABEL[state.settings.mode]} on this trip, so walking)`:""}`;
+}
+function cmLink(l){
+  const a=CAMPUS[l.A.campus], b=CAMPUS[l.B.campus];
+  const u=`https://citymapper.com/directions?startcoord=${a.lat},${a.lon}&startname=${encodeURIComponent(a.full)}&endcoord=${b.lat},${b.lon}&endname=${encodeURIComponent(b.full)}`;
+  return `<a href="${u}" target="_blank" rel="noopener">Plan this trip in Citymapper ↗</a>`;
+}
+function legHTML(l){
+  const s=state.settings, A=CAMPUS[l.A.campus], B=CAMPUS[l.B.campus];
+  const startTxt = fmt(effStart(l.B,s)) + (B.mit && s.mitTime ? " (MIT time)" : "");
+  let math, fix="";
+  if(l.status==="clash"){
+    math=`${esc(l.A.name)} ends ${fmt(toMin(l.A.end))}, but ${esc(l.B.name)} starts ${startTxt}. They overlap by ${-l.gap} min.`;
+    fix=`You can't take both as scheduled. Look for another section, or ask both instructors early.`;
+  } else {
+    math=`${esc(l.A.name)} ends ${fmt(toMin(l.A.end))} → ${esc(l.B.name)} starts ${startTxt}. Gap ${l.gap} min − ${travelText(l)} = <b>${l.spare>=0?l.spare+" min spare":(-l.spare)+" min late"}</b>.`;
+    const alt=MODE_KEYS.filter(k=>l.m[k]!=null).map(k=>{const sp=l.gap-l.m[k];return `<span class="mode-pill ${statusOf(sp,s)}">${MODE_LABEL[k]} ${l.m[k]}m → ${sp>=0?"+"+sp:sp}</span>`;}).join("");
+    if(l.status!=="ok"){
+      const better=MODE_KEYS.filter(k=>l.m[k]!=null && l.gap-l.m[k]>=s.margin);
+      const possible=MODE_KEYS.filter(k=>l.m[k]!=null && l.gap-l.m[k]>=0);
+      if(better.length && s.mode!=="best") fix=`Switch to ${better.map(k=>MODE_LABEL[k]).join(" or ")} to get there comfortably.`;
+      else if(l.status==="tight") fix = l.travel.mode==="transit" ? `Doable, but one slow train makes you late. Sit near the door and leave on time.` : `Doable, but a question after class or a red light makes you late. Pack up early and leave on time.`;
+      else if(possible.length) fix=`Only ${possible.map(k=>MODE_LABEL[k]).join(" or ")} gets you there in time.`;
+      else fix=`No way to make this one on time. Look for another section, or ask the instructor before you petition${l.B.campus==="hbs"?" (HBS requires attendance at every session)":""}.`;
+    }
+    fix = `<div class="modes">${alt}</div>${fix?`<div style="margin-top:6px">${fix}</div>`:""}`;
+    const alertNote = liveAlertFor(l);
+    if(alertNote) fix += `<div class="live-note">${alertNote}</div>`;
+  }
+  const cross = l.A.campus!==l.B.campus && l.status!=="clash";
+  return `<div class="leg">
+    <span class="badge ${l.status}">${STATUS_LABEL[l.status]}</span>
+    <div class="what">${DAYS[l.day]} · ${esc(A.code)} → ${esc(B.code)}</div>
+    <div class="math">${math}</div>
+    <div class="fix">${fix}${cross?`<div style="margin-top:4px">${cmLink(l)}</div>`:""}</div>
+  </div>`;
+}
+
+function renderResults(){
+  const s=state.settings, {legs,byDay,lunch}=analyze();
+  const cnt={ok:0,tight:0,late:0,clash:0}; legs.forEach(l=>cnt[l.status]++);
+  const travelTotal=legs.reduce((t,l)=>t+(l.travel && l.A.campus!==l.B.campus ? l.travel.min:0),0);
+  const problems=legs.filter(l=>l.status!=="ok");
+
+  // verdict
+  const bad=cnt.late+cnt.clash;
+  $("verdict").innerHTML = !legs.length ? "Add at least two classes on the same day to check the moves between them."
+    : bad ? `<b>${bad} ${bad===1?"move doesn't":"moves don't"} work.</b> Fix ${bad===1?"it":"them"} before you petition.`
+    : cnt.tight ? `<b>It works, but ${cnt.tight} ${cnt.tight===1?"move is":"moves are"} tight.</b> Plan those days carefully.`
+    : `<b>Your week works.</b> Every move has at least ${s.margin} minutes to spare.`;
+  $("stats").innerHTML = [
+    ["ok",cnt.ok,"comfortable"],["tight",cnt.tight,"tight"],["late",bad,"won't make it or clash"],
+    ["",legs.length,"moves checked"],["",travelTotal,"min travelling a week"]
+  ].map(([c,n,l])=>`<div class="stat ${c}"><span class="n">${n}</span><span class="l">${l}</span></div>`).join("");
+
+  // day tabs
+  const dayWorst=DAYS.map((_,d)=>{const L=legs.filter(l=>l.day===d); return L.some(l=>l.status==="late"||l.status==="clash")?"late":L.some(l=>l.status==="tight")?"tight":L.length?"ok":null;});
+  $("dayTabs").innerHTML=DAYS.map((d,i)=>`<button type="button" data-tab="${i}" aria-pressed="${state.day===i}">${d}${dayWorst[i]?`<span class="dot" style="background:var(--${dayWorst[i]})"></span>`:""}</button>`).join("");
+
+  // board
+  const all=state.classes.filter(valid);
+  let t0=480,t1=1080;
+  if(all.length){ t0=Math.min(t0,Math.floor(Math.min(...all.map(c=>toMin(c.start)))/60)*60); t1=Math.max(t1,Math.ceil(Math.max(...all.map(c=>toMin(c.end)))/60)*60); }
+  const ppm = 0.95, H=(t1-t0)*ppm+12, y=m=>(m-t0)*ppm+6;
+  let html=`<div></div>`+DAYS.map((d,i)=>`<div class="colhead${state.day===i?" active":""}">${d}</div>`).join("");
+  let axis=`<div class="axis" style="height:${H}px">`; for(let m=t0;m<=t1;m+=60) axis+=`<span style="top:${y(m)}px">${m/60}:00</span>`; axis+=`</div>`;
+  html+=axis;
+  DAYS.forEach((d,i)=>{
+    let col=`<div class="col${state.day===i?" active":""}" style="height:${H}px">`;
+    for(let m=t0;m<=t1;m+=60) col+=`<div class="hour" style="top:${y(m)}px"></div>`;
+    if(lunch.some(x=>x.day===i)) col+=`<div class="lunchband" style="top:${y(690)}px;height:${150*ppm}px" title="No 30-minute lunch break"></div>`;
+    byDay[i].forEach(c=>{
+      const camp=CAMPUS[c.campus], a=effStart(c,s), b=toMin(c.end);
+      col+=`<div class="block" style="top:${y(a)}px;height:${Math.max(18,(b-a)*ppm)}px;background:${camp.color}" title="${esc(c.name)} · ${esc(camp.full)}"><span class="code">${esc(camp.code)}</span><b>${esc(c.name)}</b><span class="t">${fmt(a)}–${fmt(b)}</span></div>`;
+    });
+    legs.filter(l=>l.day===i).forEach(l=>{
+      const a=toMin(l.A.end), b=effStart(l.B,s);
+      if(l.status==="clash"){ col+=`<span class="chip clash" style="top:${y(b)}px">clash ${-l.gap}m</span>`; return; }
+      if(l.A.campus===l.B.campus && l.status==="ok") return;
+      col+=`<div class="route ${l.status}" style="top:${y(a)}px;height:${Math.max(3,(b-a)*ppm)}px"></div>`;
+      col+=`<span class="chip ${l.status}" style="top:${y(a)+Math.max(3,(b-a)*ppm)/2}px">${l.travel.min}m ${MODE_SHORT[l.travel.mode]} · ${l.spare>=0?"+"+l.spare:l.spare}</span>`;
+    });
+    if(!byDay[i].length) col+=`<div class="empty-day">No classes</div>`;
+    col+=`</div>`; html+=col;
+  });
+  $("board").innerHTML=html;
+  const used=[...new Set(all.map(c=>c.campus))];
+  $("legend").innerHTML = used.map(k=>`<span><i style="background:${CAMPUS[k].color}"></i>${esc(CAMPUS[k].name)}</span>`).join("")
+    + `<span><i style="background:var(--ok)"></i>comfortable</span><span><i style="background:var(--tight)"></i>tight</span><span><i style="background:var(--late)"></i>late or clash</span>`
+    + (lunch.length?`<span><i style="background:repeating-linear-gradient(135deg,var(--paper) 0 2px,var(--muted) 2px 3px)"></i>no lunch break</span>`:"");
+
+  // legs
+  $("lunch").innerHTML = lunch.length ? `<div class="lunch-warn"><b>No lunch break on ${lunch.map(x=>DAYS[x.day]).join(", ")}.</b> Between 11:30 and 14:00 you never have 30 free minutes once travel is counted. Pack food or move a class.</div>` : "";
+  const order={clash:0,late:1,tight:2};
+  $("problemLegs").innerHTML = problems.length ? problems.sort((a,b)=>order[a.status]-order[b.status]||a.day-b.day).map(legHTML).join("")
+    : `<div class="sample-note">Nothing to fix. ${legs.length?"Every move between classes has enough time.":""}</div>`;
+  const oks=legs.filter(l=>l.status==="ok");
+  $("okSummary").textContent = `${oks.length} comfortable ${oks.length===1?"move":"moves"}`;
+  $("okLegs").innerHTML = oks.map(legHTML).join("");
+
+  // notes
+  const notes=[];
+  const has=k=>used.includes(k);
+  if(has("hbs")) notes.push(`<b>HBS:</b> attendance at all class sessions is required, and HBS uses its own X/Y schedule days. <a href="https://www.hbs.edu/mba/registrar/crossregistration/crossregistration-courseplanning" target="_blank" rel="noopener">HBS cross-registration ↗</a>`);
+  if(has("mit")||has("sloan")) notes.push(`<b>MIT:</b> find times in MIT's own catalog; petition through the Crimson Cart in my.harvard. Classes start 5 minutes after the listed time${s.mitTime?" (applied here)":" (switched off here)"}.`);
+  if(has("fletcher")) notes.push(`<b>Fletcher:</b> a PDF petition signed by the faculty member goes to FletcherRegistrar@tufts.edu. Follow both schools' calendars; capped courses are approved only in the first week. The free Tufts shuttle from Davis runs on the hour and half hour. <a href="https://fletcher.tufts.edu/programs/cross-registration/non-fletcher-students" target="_blank" rel="noopener">Fletcher rules ↗</a>`);
+  if(has("sec")) notes.push(`<b>FAS Allston:</b> classes start 45 minutes later than Cambridge (9:45, 11:15, 12:45 …).`);
+  if(used.some(k=>!["hks","mit","sloan","fletcher"].includes(k))) notes.push(`<b>Other Harvard schools:</b> petition through the Crimson Cart in my.harvard. For Harvard shuttles, use Citymapper (Harvard's shuttle tracker since August 2026).`);
+  notes.push(`<b>Deadlines:</b> add and cross-registration petitions for full-term and Spring 1 courses are due Tuesday 2 February 2027, 11:59 pm; Spring 2 by 30 March. <a href="https://www.hks.harvard.edu/educational-programs/academic-calendars-policies/current-academic-calendar" target="_blank" rel="noopener">HKS calendar ↗</a>`);
+  $("notes").innerHTML=notes.map(n=>`<li>${n}</li>`).join("");
+}
+
+function renderDeadline(){
+  const now=new Date(); now.setHours(0,0,0,0);
+  const next=DEADLINES.map(d=>({...d,t:new Date(d.date+"T00:00:00")})).find(d=>d.t>=now);
+  if(!next){ $("deadline").hidden=true; return; }
+  const days=Math.round((next.t-now)/86400000);
+  const pretty=next.t.toLocaleDateString("en-US",{weekday:"short",day:"numeric",month:"short"});
+  $("deadline").innerHTML=`<b>${days===0?"Today":days+" days"}</b><span>${esc(next.label)}: ${pretty}, 11:59 pm</span>`;
+}
+
+function render(){ renderClasses(); renderSettings(); renderResults(); save(); }
+function update(){ renderResults(); save(); }
+
+// ---------- Events ----------
+const findClass = el => state.classes.find(c=>c.id===Number(el.closest(".cls")?.dataset.id));
+$("classList").addEventListener("input",e=>{
+  const c=findClass(e.target); if(!c) return; const f=e.target.dataset.f; if(!f) return;
+  c[f]=e.target.value; state.isSample=false; $("sampleNote").hidden=true;
+  if(f==="campus"){ renderClasses(); document.getElementById(`campus-${c.id}`)?.focus(); }
+  update();
+});
+$("classList").addEventListener("change",e=>{ if(e.target.type==="time"){ renderClasses(); update(); } });
+$("classList").addEventListener("click",e=>{
+  const c=findClass(e.target); if(!c) return;
+  const day=e.target.closest(".day"), del=e.target.closest("[data-act=del]");
+  if(day){ const d=Number(day.dataset.day); c.days=c.days.includes(d)?c.days.filter(x=>x!==d):[...c.days,d].sort(); state.isSample=false; renderClasses(); document.querySelector(`.cls[data-id="${c.id}"] .day[data-day="${d}"]`)?.focus(); update(); }
+  if(del){ state.classes=state.classes.filter(x=>x!==c); state.isSample=false; render(); }
+});
+$("addBtn").addEventListener("click",()=>{
+  const c={id:uid++,name:"",campus:"hks",days:[],start:"10:30",end:"11:45"};
+  state.classes.push(c); state.isSample=false; render();
+  document.getElementById(`name-${c.id}`)?.focus();
+});
+$("sampleBtn").addEventListener("click",()=>{ state.classes=withIds(SAMPLE); state.isSample=true; render(); toast("Sample week loaded"); });
+$("clearWrap").addEventListener("click",e=>{
+  const w=$("clearWrap");
+  if(e.target.id==="clearBtn"){ w.innerHTML=`<span class="confirm">Remove all classes? <button class="btn" type="button" id="clearYes">Remove</button><button class="btn ghost" type="button" id="clearNo">Cancel</button></span>`; $("clearNo").focus(); }
+  else if(e.target.id==="clearYes"){ state.classes=[]; state.isSample=false; w.innerHTML=`<button class="btn ghost" id="clearBtn" type="button">Clear all</button>`; render(); toast("All classes removed"); }
+  else if(e.target.id==="clearNo"){ w.innerHTML=`<button class="btn ghost" id="clearBtn" type="button">Clear all</button>`; }
+});
+$("modeSeg").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; state.settings.mode=b.dataset.mode; renderSettings(); update(); });
+$("winter").addEventListener("change",e=>{ state.settings.winter=e.target.checked; update(); });
+$("mitTime").addEventListener("change",e=>{ state.settings.mitTime=e.target.checked; update(); });
+$("margin").addEventListener("input",e=>{ state.settings.margin=Number(e.target.value); renderSettings(); update(); });
+$("wait").addEventListener("input",e=>{ state.settings.wait=Number(e.target.value); renderSettings(); update(); });
+$("dayTabs").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; state.day=Number(b.dataset.tab); renderResults(); });
+
+function summaryText(){
+  const {legs,lunch}=analyze(), s=state.settings;
+  const lines=["ClassHop: my week check",""];
+  legs.forEach(l=>{
+    if(l.status==="clash") lines.push(`${DAYS[l.day]} ${CAMPUS[l.A.campus].code} → ${CAMPUS[l.B.campus].code}: TIME CLASH (${-l.gap} min overlap)`);
+    else lines.push(`${DAYS[l.day]} ${CAMPUS[l.A.campus].code} → ${CAMPUS[l.B.campus].code}: ${STATUS_LABEL[l.status]} (gap ${l.gap} min, ${travelText(l)}, ${l.spare>=0?l.spare+" spare":(-l.spare)+" late"})`);
+  });
+  if(lunch.length) lines.push("", `No lunch break: ${lunch.map(x=>DAYS[x.day]).join(", ")}`);
+  lines.push("", `Settings: ${s.mode==="best"?"fastest mode":MODE_LABEL[s.mode]}${s.winter?", winter":""}, comfortable if ≥${s.margin} min spare.`);
+  return lines.join("\n");
+}
+$("copyBtn").addEventListener("click",()=>{
+  const text=summaryText();
+  const fallback=()=>{ const ta=document.createElement("textarea"); ta.value=text; ta.setAttribute("aria-label","Week summary"); ta.style.cssText="width:100%;min-height:160px;margin-top:8px;font-family:var(--f-mono);font-size:12px"; $("problemLegs").prepend(ta); ta.select(); toast("Select the text and copy it"); };
+  try{ navigator.clipboard.writeText(text).then(()=>toast("Summary copied"),fallback); }catch(e){ fallback(); }
+});
+let toastTimer;
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.hidden=false; clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.hidden=true,2200); }
+
+// ---------- Live Red Line (MBTA V3 API through /api/mbta) ----------
+const live = {state:"loading", alerts:[], stations:{}, at:null, msg:""};
+const SERVICE_EFFECTS = new Set(["DELAY","SUSPENSION","SHUTTLE","DETOUR","SERVICE_CHANGE","STATION_CLOSURE","STOP_CLOSURE","REDUCED_SERVICE","CANCELLATION","TRACK_CHANGE","STATION_ISSUE","NO_SERVICE"]);
+const prettyEffect = e => String(e||"alert").toLowerCase().replace(/_/g," ");
+function alertTouches(a, stationKeys){
+  const ids = stationKeys.map(k=>MBTA_STOP[k]), names = stationKeys.map(k=>STATIONS[k].name.split("/")[0]);
+  const ents = a.attributes.informed_entity||[];
+  const lineWide = ents.some(e=>e.route==="Red" && !e.stop);
+  const byStop = ents.some(e=>ids.includes(e.stop));
+  const byName = names.some(n=>(a.attributes.header||"").includes(n));
+  return lineWide || byStop || byName || ["DELAY","SUSPENSION","SHUTTLE","REDUCED_SERVICE"].includes(a.attributes.effect);
+}
+function liveAlertFor(l){
+  if(live.state!=="ok" || !l.travel || l.travel.mode!=="transit") return "";
+  const keys=[CAMPUS[l.A.campus].station, CAMPUS[l.B.campus].station];
+  const hit=live.alerts.find(a=>alertTouches(a,keys));
+  return hit ? `<b>Red Line alert right now (${esc(prettyEffect(hit.attributes.effect))}):</b> ${esc(hit.attributes.short_header||hit.attributes.header)} Today this trip may take longer.` : "";
+}
+async function getJSON(url){
+  const r = await fetch(url, {headers:{accept:"application/json"}});
+  const type = r.headers.get("content-type")||"";
+  if(!type.includes("json")) throw Object.assign(new Error("not here"),{code:"absent"});
+  const body = await r.json();
+  if(!r.ok) throw Object.assign(new Error(body.error||("MBTA returned "+r.status)),{code:"api"});
+  return body;
+}
+async function loadLive(){
+  try{
+    const [al, ...preds] = await Promise.all([
+      getJSON("/api/mbta?kind=alerts"),
+      ...Object.values(MBTA_STOP).map(id=>getJSON("/api/mbta?kind=predictions&stop="+id))
+    ]);
+    live.alerts = (al.data||[]).filter(a=>SERVICE_EFFECTS.has(a.attributes.effect));
+    Object.keys(MBTA_STOP).forEach((k,i)=>{ live.stations[k]=preds[i].data||[]; });
+    live.state="ok"; live.at=new Date();
+  }catch(e){
+    live.state = live.state==="ok" ? "ok" : "error";
+    live.msg = e.code==="absent" ? "Live Red Line data runs on the public ClassHop site, where a small server function talks to the MBTA. It isn't available in this preview."
+      : "The MBTA's live data didn't load just now. ClassHop still works with average times. It will try again in a minute.";
+  }
+  renderLive(); renderResults();
+}
+function renderLive(){
+  const dot=$("liveDot"), body=$("liveBody");
+  dot.classList.toggle("on", live.state==="ok");
+  if(live.state==="loading") return;
+  if(live.state!=="ok"){ body.innerHTML=`<p class="muted">${esc(live.msg)}</p>`; $("liveTime").textContent=""; return; }
+  $("liveTime").textContent = "MBTA live data · updated " + live.at.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+  const now=Date.now();
+  const next = (list,dir) => list.filter(p=>p.attributes.direction_id===dir && p.attributes.departure_time)
+    .map(p=>Math.round((Date.parse(p.attributes.departure_time)-now)/60000)).filter(m=>m>=0).sort((a,b)=>a-b).slice(0,2);
+  const fmtMins = arr => arr.length ? arr.map(m=>m===0?"now":m+" min").join(", ") : "no prediction";
+  const cards = Object.keys(MBTA_STOP).map(k=>`<div class="station"><h3>${esc(STATIONS[k].name)}</h3>
+      <div class="dir"><span>to Alewife</span><span class="mins">${fmtMins(next(live.stations[k],1))}</span></div>
+      <div class="dir"><span>to Ashmont / Braintree</span><span class="mins">${fmtMins(next(live.stations[k],0))}</span></div></div>`).join("");
+  const rel = live.alerts.filter(a=>alertTouches(a,Object.keys(MBTA_STOP))).slice(0,3);
+  const alerts = rel.length ? `<div class="alerts">${rel.map(a=>`<div class="alert"><b>${esc(prettyEffect(a.attributes.effect))}:</b> ${esc(a.attributes.short_header||a.attributes.header)}</div>`).join("")}</div>`
+    : `<p class="muted">No Red Line service alerts affecting Harvard, Kendall/MIT or Davis right now.</p>`;
+  body.innerHTML = `<div class="stack"><div class="stations">${cards}</div>${alerts}<p class="muted">Your week above uses average waits. Use this panel on the day itself.</p></div>`;
+}
+loadLive();
+setInterval(()=>{ if(!document.hidden) loadLive(); }, 60000);
+
+renderDeadline(); render();
+})();
+</script>
+
+</body>
+</html>

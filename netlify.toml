@@ -1,0 +1,7 @@
+# ClassHop deploy settings for Netlify.
+# No build step: the site is one HTML page plus one serverless function.
+[build]
+  publish = "."
+
+[functions]
+  directory = "netlify/functions"
