@@ -46,10 +46,32 @@ header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:spac
 .deadline{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:4px;padding:10px 16px;font-size:14px}
 .deadline b{font-family:var(--f-display);font-size:26px;font-weight:700;color:var(--accent);white-space:nowrap;line-height:1}
 
-.grid{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:20px;align-items:start}
-@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}.grid>.stack:last-child{order:-1}}
+/* Tabs */
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:15;background:var(--paper);margin-top:-8px;padding-block:8px 0;border-bottom:1px solid var(--line)}
+.tabs-inner{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.tablist{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+.tablist button{border:0;background:transparent;padding:10px 14px 12px;font-weight:600;font-size:15px;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap;border-radius:4px 4px 0 0}
+.tablist button:hover{color:var(--ink);background:var(--soft)}
+.tablist button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+.link-btn{margin-bottom:8px;font-size:13px;padding:6px 12px;border-color:var(--line)}
+.view{padding-top:4px}
+.week-head{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px}
+.travelbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;border-top:1px solid var(--line);padding-top:14px}
+.travelbar .seg{min-width:min(100%,420px)}
+.toggle.inline{align-items:center;font-size:14px}
+.toggle.inline input{margin-top:0}
+.more-settings{flex-basis:100%}
+.more-settings summary{cursor:pointer;font-size:14px;color:var(--muted);font-weight:600}
+.week-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:1100px){.week-grid{grid-template-columns:minmax(0,1fr)}}
+.class-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:14px}
+.class-grid .cls{background:var(--panel)}
+.prose p{margin:0;max-width:72ch}
+.link-btn-mobile{display:none}
+@media (max-width:640px){.tablist button{padding:9px 10px 11px;font-size:14px}.tabs .link-btn{display:none}.link-btn-mobile{display:inline-block}.stats .stat:last-child{grid-column:span 2}}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px;min-width:0;box-shadow:0 1px 2px rgba(30,33,37,.04)}
 .panel h2{font-size:21px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:8px}
+p.eyebrow{margin:0}
 .eyebrow{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .stack{display:flex;flex-direction:column;gap:14px}
 
@@ -75,7 +97,7 @@ header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:spac
 .confirm{display:flex;gap:8px;align-items:center;font-size:13px}
 
 /* Settings */
-.seg{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid var(--ink);border-radius:8px;overflow:hidden}
+.seg{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border:1px solid var(--ink);border-radius:8px;overflow:hidden}
 .hint-p{margin:-6px 0 0;font-size:12px;color:var(--muted)}
 /* Live Red Line */
 .live-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px}
@@ -184,73 +206,115 @@ footer{font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);padd
     <div class="deadline" id="deadline"></div>
   </header>
 
-  <div class="grid">
-    <!-- LEFT: inputs -->
-    <div class="stack">
-      <section class="panel stack" aria-labelledby="h-classes">
-        <h2 id="h-classes">Your classes <span class="eyebrow" id="count"></span></h2>
-        <div class="sample-note" id="sampleNote" hidden>This is a <b>sample week</b>. Edit it, or clear it and add your own classes from my.harvard and the MIT or Fletcher catalogs.</div>
-        <div class="stack" id="classList"></div>
-        <div class="btn-row">
-          <button class="btn primary" id="addBtn" type="button">+ Add class</button>
-          <button class="btn" id="sampleBtn" type="button">Try a sample week</button>
-          <span id="clearWrap"><button class="btn ghost" id="clearBtn" type="button">Clear all</button></span>
-        </div>
-      </section>
+  <nav class="tabs" aria-label="ClassHop sections">
+    <div class="tabs-inner">
+      <div class="tablist" role="tablist">
+        <button type="button" role="tab" data-view="week" id="tab-week" aria-controls="view-week">My week</button>
+        <button type="button" role="tab" data-view="classes" id="tab-classes" aria-controls="view-classes">My classes</button>
+        <button type="button" role="tab" data-view="today" id="tab-today" aria-controls="view-today">Today</button>
+        <button type="button" role="tab" data-view="about" id="tab-about" aria-controls="view-about">About</button>
+      </div>
+      <button class="btn link-btn js-link" id="linkBtn" type="button" title="Copy a link that opens this exact week on any device">Copy my link</button>
+    </div>
+  </nav>
 
-      <section class="panel stack" aria-labelledby="h-travel">
-        <h2 id="h-travel">How you travel</h2>
-        <div class="seg" role="group" aria-label="Travel mode" id="modeSeg">
-          <button type="button" data-mode="best">Fastest</button>
-          <button type="button" data-mode="walk">Walk</button>
-          <button type="button" data-mode="bike">Bike</button>
-          <button type="button" data-mode="transit">T + walk</button>
-          <button type="button" data-mode="shuttle">Shuttle</button>
+  <!-- MY WEEK -->
+  <section class="view stack" id="view-week" role="tabpanel" aria-labelledby="tab-week">
+    <div class="panel stack">
+      <div class="week-head">
+        <div class="stack" style="gap:4px">
+          <h2 id="h-week">Your week, as routes</h2>
+          <p class="verdict" id="verdict"></p>
         </div>
-        <p class="hint-p">Harvard shuttle times cover trips between Cambridge and the SEC in Allston. Shuttles don't go to MIT or Fletcher.</p>
-        <label class="toggle"><input type="checkbox" id="winter"><span>Boston winter<small>Adds 25% to walking and cycling for snow, ice and layers.</small></span></label>
-        <label class="toggle"><input type="checkbox" id="mitTime"><span>Apply MIT time<small>MIT classes start 5 minutes after the listed time.</small></span></label>
-        <div class="margin-row"><label for="margin">Comfortable if spare ≥</label><input type="range" id="margin" min="0" max="20" step="1"><span class="mono" id="marginVal"></span></div>
-        <div class="margin-row"><label for="wait">Average wait for the T</label><input type="range" id="wait" min="3" max="15" step="1"><span class="mono" id="waitVal"></span></div>
-      </section>
+        <div class="btn-row"><button class="btn ghost" type="button" data-go="classes">Edit classes</button><button class="btn ghost link-btn-mobile js-link" type="button">Copy my link</button></div>
+      </div>
+      <div class="stats" id="stats"></div>
+      <div class="travelbar">
+        <span class="eyebrow">How you travel</span>
+        <div class="seg" role="group" aria-label="Travel mode" id="modeSeg">
+          <button type="button" data-mode="best">Best</button>
+          <button type="button" data-mode="walk">Walk</button>
+          <button type="button" data-mode="transit">T</button>
+          <button type="button" data-mode="bus">Bus</button>
+          <button type="button" data-mode="shuttle">Shuttle</button>
+          <button type="button" data-mode="bike">Bike</button>
+        </div>
+        <label class="toggle inline"><input type="checkbox" id="hasBike"><span>I have a bike</span></label>
+        <label class="toggle inline"><input type="checkbox" id="winter"><span>Boston winter</span></label>
+        <details class="more-settings">
+          <summary>More settings</summary>
+          <div class="stack" style="margin-top:10px">
+            <p class="hint-p"><b>Best</b> picks the quickest option for each move. The T covers Harvard–Kendall/MIT–Davis; bus 1 runs Harvard–MIT and bus 96 Harvard–Davis–Tufts; Harvard shuttles run between Cambridge and the SEC in Allston. "I have a bike" lets Best consider cycling; "Boston winter" adds 25% to walking and cycling.</p>
+            <label class="toggle"><input type="checkbox" id="mitTime"><span>Apply MIT time<small>MIT classes start 5 minutes after the listed time.</small></span></label>
+            <div class="margin-row"><label for="margin">Comfortable if spare ≥</label><input type="range" id="margin" min="0" max="20" step="1"><span class="mono" id="marginVal"></span></div>
+            <div class="margin-row"><label for="wait">Average wait for the T</label><input type="range" id="wait" min="3" max="15" step="1"><span class="mono" id="waitVal"></span></div>
+          </div>
+        </details>
+      </div>
     </div>
 
-    <!-- RIGHT: results -->
-    <div class="stack">
-      <section class="panel stack" aria-labelledby="h-week">
-        <h2 id="h-week">Your week, as routes</h2>
-        <p class="verdict" id="verdict"></p>
-        <div class="stats" id="stats"></div>
+    <div class="week-grid">
+      <div class="panel stack">
         <div class="daytabs" id="dayTabs" role="group" aria-label="Day"></div>
         <div class="board-scroll"><div class="board" id="board"></div></div>
         <div class="legend" id="legend"></div>
-      </section>
+      </div>
+      <div class="stack">
+        <div class="panel stack">
+          <h2 id="h-legs">Fix these first <button class="btn ghost" id="copyBtn" type="button">Copy summary</button></h2>
+          <div id="lunch"></div>
+          <div class="legs" id="problemLegs"></div>
+          <details class="more"><summary id="okSummary"></summary><div class="legs" id="okLegs" style="margin-top:10px"></div></details>
+        </div>
+        <div class="panel stack">
+          <h2 id="h-notes">Rules for the schools in your week</h2>
+          <ul class="notes" id="notes"></ul>
+        </div>
+      </div>
+    </div>
+  </section>
 
-      <section class="panel stack" aria-labelledby="h-live">
-        <div class="live-head"><h2 id="h-live"><span class="live-dot" id="liveDot"></span>Red Line right now</h2><span class="muted" id="liveTime"></span></div>
-        <div id="liveBody"><p class="muted">Loading live departures from the MBTA…</p></div>
-      </section>
+  <!-- MY CLASSES -->
+  <section class="view stack" id="view-classes" role="tabpanel" aria-labelledby="tab-classes" hidden>
+    <div class="panel stack">
+      <div class="week-head">
+        <div class="stack" style="gap:4px">
+          <h2 id="h-classes">Your classes <span class="eyebrow" id="count"></span></h2>
+          <p class="verdict" id="classVerdict"></p>
+        </div>
+        <button class="btn primary" type="button" data-go="week">See my week →</button>
+      </div>
+      <div class="sample-note" id="sampleNote" hidden>This is a <b>sample week</b>. Edit it, or clear it and add your own classes. Copy exact times from my.harvard, MIT's subject listing or Fletcher's course list.</div>
+      <div class="btn-row">
+        <button class="btn primary" id="addBtn" type="button">+ Add class</button>
+        <button class="btn" id="sampleBtn" type="button">Load sample week</button>
+        <span id="clearWrap"><button class="btn ghost" id="clearBtn" type="button">Clear all</button></span>
+      </div>
+    </div>
+    <div class="class-grid" id="classList"></div>
+  </section>
 
-      <section class="panel stack" aria-labelledby="h-legs">
-        <h2 id="h-legs">Fix these first <button class="btn ghost" id="copyBtn" type="button">Copy summary</button></h2>
-        <div id="lunch"></div>
-        <div class="legs" id="problemLegs"></div>
-        <details class="more"><summary id="okSummary"></summary><div class="legs" id="okLegs" style="margin-top:10px"></div></details>
-      </section>
+  <!-- TODAY -->
+  <section class="view stack" id="view-today" role="tabpanel" aria-labelledby="tab-today" hidden>
+    <div class="panel stack">
+      <div class="live-head"><h2 id="h-live"><span class="live-dot" id="liveDot"></span>Transit right now</h2><span class="muted" id="liveTime"></span></div>
+      <div id="liveBody"><p class="muted">Loading live Red Line and bus departures from the MBTA…</p></div>
+    </div>
+  </section>
 
-      <section class="panel stack" aria-labelledby="h-notes">
-        <h2 id="h-notes">Rules for the schools in your week</h2>
-        <ul class="notes" id="notes"></ul>
-      </section>
-
-      <section class="panel stack" aria-labelledby="h-src">
-        <details>
-          <summary><h2 id="h-src" style="display:inline">How the times are worked out</h2></summary>
-          <div class="stack" style="margin-top:12px">
-            <p style="margin:0;font-size:14px">Spare time = the gap between one class ending and the next starting, minus the travel time. Walking is estimated from the distance between buildings × 1.3 for street routes at 4.8 km/h; cycling at 15 km/h plus 3 minutes to unlock and lock. "T + walk" = walk to the station, average wait, ride, walk from the station. Between Harvard buildings the tool uses walking or cycling; for Harvard shuttles, open the trip in Citymapper. The first class of each day is not checked, because the tool doesn't know where you start.</p>
-            <div class="src"><table>
-              <thead><tr><th>What</th><th>Value used</th><th>Source</th></tr></thead>
-              <tbody>
+  <!-- ABOUT -->
+  <section class="view stack" id="view-about" role="tabpanel" aria-labelledby="tab-about" hidden>
+    <div class="panel stack prose">
+      <h2 id="h-about">What ClassHop does</h2>
+      <p>HKS students can cross-register at other Harvard schools, MIT and Tufts Fletcher, but each school lists classes in its own catalog and on its own time grid. ClassHop puts your classes on one week, works out the travel time for every move between campuses, and flags moves you can't make, tight connections and days without a lunch break, before the cross-registration deadline.</p>
+      <p><b>Privacy:</b> no account, no tracking. Your week is saved only in this browser. "Copy my link" packs your week into a web link so you can open it on another device; anyone you send that link to can see your class times.</p>
+    </div>
+    <div class="panel stack">
+      <h2 id="h-src">How the times are worked out</h2>
+      <p style="margin:0;font-size:15px">Spare time = the gap between one class ending and the next starting, minus the travel time. Walking is estimated from the distance between buildings × 1.3 for street routes at 4.8 km/h; cycling at 15 km/h plus 3 minutes to unlock and lock. "T + walk" = walk to the station, average wait, ride, walk from the station. "MBTA bus" = walk to the stop, half the usual gap between buses, the ride, and the walk from the stop. <span id="busSource">Bus times are estimates until the MBTA timetable loads.</span> For live Harvard shuttle tracking, open a trip in Citymapper. The first class of each day is not checked, because the tool doesn't know where you start.</p>
+      <div class="src"><table>
+        <thead><tr><th>What</th><th>Value used</th><th>Source</th></tr></thead>
+        <tbody>
                 <tr><td>Red Line ride, Harvard to Kendall/MIT</td><td class="mono">8 min</td><td><a href="https://www.hodp.org/project/mbta-showdown-best-college-mbta-station/" target="_blank" rel="noopener">Harvard Open Data Project</a></td></tr>
                 <tr><td>Average Red Line wait at Harvard</td><td class="mono">9 min (adjustable)</td><td><a href="https://www.hodp.org/project/mbta-showdown-best-college-mbta-station/" target="_blank" rel="noopener">Harvard Open Data Project</a> (2021 mean 9 min 15 s)</td></tr>
                 <tr><td>Red Line ride, Harvard to Davis</td><td class="mono">9 min</td><td><a href="https://www.rome2rio.com/s/Harvard-Square/Davis-Square" target="_blank" rel="noopener">Rome2rio</a></td></tr>
@@ -261,15 +325,13 @@ footer{font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);padd
                 <tr><td>HBS attendance rule</td><td>Attendance at all sessions required</td><td><a href="https://www.hbs.edu/mba/registrar/crossregistration/crossregistration-courseplanning" target="_blank" rel="noopener">HBS Registrar</a></td></tr>
                 <tr><td>Fletcher petitions</td><td>Signed PDF petition; follow both calendars</td><td><a href="https://fletcher.tufts.edu/programs/cross-registration/non-fletcher-students" target="_blank" rel="noopener">Fletcher Registrar</a></td></tr>
                 <tr><td>Live Red Line departures and alerts</td><td>Refreshed every minute</td><td><a href="https://www.mbta.com/developers/v3-api" target="_blank" rel="noopener">MBTA V3 API</a>, through a server-side function that keeps the key private</td></tr>
+                <tr><td>Bus routes 1 (Harvard–MIT) and 96 (Harvard–Davis–Tufts)</td><td>Gap between buses and ride time, 9:00–17:00 on the next weekday</td><td><a href="https://www.mbta.com/developers/v3-api" target="_blank" rel="noopener">MBTA timetable via the V3 API</a>; live departures and alerts refreshed every minute</td></tr>
                 <tr><td>Harvard shuttle frequency (Cambridge ↔ SEC)</td><td class="mono">every 15 min 7:30–15:45 (30 min 11:30–12:30); every 20 min after 15:45; ride 8–11 min (estimate)</td><td><a href="https://transportation.harvard.edu/harvard-shuttle/shuttle-schedule-and-routes" target="_blank" rel="noopener">Harvard shuttle schedule</a> (SEC Express, Allston Loop)</td></tr>
                 <tr><td>Harvard shuttles</td><td>Tracked in Citymapper since Aug 2026</td><td><a href="https://transportation.harvard.edu/news/2026/08/harvard-shuttles-launch-citymapper" target="_blank" rel="noopener">Harvard Transportation</a></td></tr>
-              </tbody>
-            </table></div>
-          </div>
-        </details>
-      </section>
+        </tbody>
+      </table></div>
     </div>
-  </div>
+  </section>
 
   <footer>
     <span>Unofficial student project for HKS DPI-681 by Elsa Nisa. Not affiliated with or endorsed by Harvard, MIT or Tufts.</span>
@@ -326,7 +388,7 @@ const SAMPLE = [
   {name:"Corporate Strategy",campus:"hbs",days:[3],start:"10:20",end:"11:40"},
   {name:"Urban Design Studio",campus:"gsd",days:[4],start:"09:00",end:"12:00"}
 ];
-const DEFAULT_SETTINGS = {mode:"best",winter:false,mitTime:true,margin:10,wait:9};
+const DEFAULT_SETTINGS = {mode:"best",hasBike:false,winter:false,mitTime:true,margin:10,wait:9};
 const DEADLINES = [{date:"2027-02-02",label:"Spring 2027 add and cross-registration petitions due"},{date:"2027-03-30",label:"Spring 2 add and cross-registration petitions due"}];
 
 // ---------- State ----------
@@ -372,17 +434,39 @@ function shuttleMin(fromKey,toKey,s,t){
   for(const st of SHUTTLE_STOPS){ const v=walkMin(other,st,s)+Math.ceil(h/2)+st.ride+1; if(best===null||v<best) best=v; }
   return best;
 }
+// MBTA buses. Estimates below are replaced by the MBTA timetable (via /api/mbta?kind=busplan) when it loads.
+const BUS_FALLBACK = {
+  "1":{out:{headway:15,ride:14,board:{name:"Massachusetts Ave @ Holyoke St",lat:42.3727,lon:-71.1178},alight:{name:"Massachusetts Ave @ Vassar St",lat:42.3601,lon:-71.0942}},
+       back:{headway:15,ride:14,board:{name:"Massachusetts Ave @ Vassar St",lat:42.3601,lon:-71.0942},alight:{name:"Massachusetts Ave @ Holyoke St",lat:42.3727,lon:-71.1178}}},
+  "96":{out:{headway:30,ride:18,board:{name:"Harvard",lat:42.3734,lon:-71.1189},alight:{name:"College Ave by Tufts",lat:42.4066,lon:-71.1192}},
+        back:{headway:30,ride:18,board:{name:"College Ave by Tufts",lat:42.4066,lon:-71.1192},alight:{name:"Harvard",lat:42.3734,lon:-71.1189}}}
+};
+let busPlan = {source:"estimate", date:null, routes:BUS_FALLBACK};
+function busRoute(fromKey,toKey){
+  const k=[CAMPUS[fromKey].station, CAMPUS[toKey].station].sort().join("-");
+  return k==="harvard-kendall" ? "1" : k==="davis-harvard" ? "96" : null;
+}
+function busLeg(route,dir){
+  const d = busPlan.routes[route] && busPlan.routes[route][dir];
+  const ok = d && d.headway && d.ride && d.board && d.alight;
+  return ok ? d : BUS_FALLBACK[route][dir];
+}
+function busMin(fromKey,toKey,s){
+  const r=busRoute(fromKey,toKey); if(!r) return null;
+  const d=busLeg(r, CAMPUS[fromKey].station==="harvard" ? "out" : "back");
+  return walkMin(CAMPUS[fromKey],d.board,s) + Math.ceil(d.headway/2) + d.ride + walkMin(d.alight,CAMPUS[toKey],s);
+}
 function modes(fromKey,toKey,s,t){
   const a=CAMPUS[fromKey], b=CAMPUS[toKey];
-  if(fromKey===toKey) return {walk:3,bike:3,transit:null,shuttle:null};
-  return {walk:walkMin(a,b,s), bike:bikeMin(a,b,s), transit:transitMin(a,b,s), shuttle:shuttleMin(fromKey,toKey,s,t)};
+  if(fromKey===toKey) return {walk:3,bike:3,transit:null,bus:null,shuttle:null};
+  return {walk:walkMin(a,b,s), bike:bikeMin(a,b,s), transit:transitMin(a,b,s), bus:busMin(fromKey,toKey,s), shuttle:shuttleMin(fromKey,toKey,s,t)};
 }
-const MODE_KEYS = ["walk","bike","transit","shuttle"];
-const MODE_LABEL = {walk:"walk",bike:"bike",transit:"T + walk",shuttle:"Harvard shuttle"};
-const MODE_SHORT = {walk:"walk",bike:"bike",transit:"T",shuttle:"shuttle"};
+const MODE_KEYS = ["walk","transit","bus","shuttle","bike"];
+const MODE_LABEL = {walk:"walk",bike:"bike",transit:"T + walk",bus:"MBTA bus",shuttle:"Harvard shuttle"};
+const MODE_SHORT = {walk:"walk",bike:"bike",transit:"T",bus:"bus",shuttle:"shuttle"};
 function pickTravel(m,s){
   if(s.mode==="best"){
-    let best=null; for(const k of MODE_KEYS) if(m[k]!=null && (best===null || m[k]<m[best])) best=k;
+    let best=null; for(const k of MODE_KEYS) if(m[k]!=null && (k!=="bike"||s.hasBike) && (best===null || m[k]<m[best])) best=k;
     return {mode:best,min:m[best]};
   }
   if(m[s.mode]==null) return {mode:"walk",min:m.walk,fallback:true};
@@ -457,7 +541,7 @@ function renderClasses(){
 function renderSettings(){
   const s=state.settings;
   document.querySelectorAll("#modeSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===s.mode));
-  $("winter").checked=s.winter; $("mitTime").checked=s.mitTime;
+  $("winter").checked=s.winter; $("mitTime").checked=s.mitTime; $("hasBike").checked=s.hasBike;
   $("margin").value=s.margin; $("marginVal").textContent=`${s.margin} min`;
   $("wait").value=s.wait; $("waitVal").textContent=`${s.wait} min`;
 }
@@ -514,6 +598,7 @@ function renderResults(){
     : bad ? `<b>${bad} ${bad===1?"move doesn't":"moves don't"} work.</b> Fix ${bad===1?"it":"them"} before you petition.`
     : cnt.tight ? `<b>It works, but ${cnt.tight} ${cnt.tight===1?"move is":"moves are"} tight.</b> Plan those days carefully.`
     : `<b>Your week works.</b> Every move has at least ${s.margin} minutes to spare.`;
+  $("classVerdict").innerHTML = $("verdict").innerHTML;
   $("stats").innerHTML = [
     ["ok",cnt.ok,"comfortable"],["tight",cnt.tight,"tight"],["late",bad,"won't make it or clash"],
     ["",legs.length,"moves checked"],["",travelTotal,"min travelling a week"]
@@ -617,6 +702,7 @@ $("clearWrap").addEventListener("click",e=>{
 });
 $("modeSeg").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; state.settings.mode=b.dataset.mode; renderSettings(); update(); });
 $("winter").addEventListener("change",e=>{ state.settings.winter=e.target.checked; update(); });
+$("hasBike").addEventListener("change",e=>{ state.settings.hasBike=e.target.checked; update(); });
 $("mitTime").addEventListener("change",e=>{ state.settings.mitTime=e.target.checked; update(); });
 $("margin").addEventListener("input",e=>{ state.settings.margin=Number(e.target.value); renderSettings(); update(); });
 $("wait").addEventListener("input",e=>{ state.settings.wait=Number(e.target.value); renderSettings(); update(); });
@@ -641,9 +727,9 @@ $("copyBtn").addEventListener("click",()=>{
 let toastTimer;
 function toast(msg){ const t=$("toast"); t.textContent=msg; t.hidden=false; clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.hidden=true,2200); }
 
-// ---------- Live Red Line (MBTA V3 API through /api/mbta) ----------
-const live = {state:"loading", alerts:[], stations:{}, at:null, msg:""};
-const SERVICE_EFFECTS = new Set(["DELAY","SUSPENSION","SHUTTLE","DETOUR","SERVICE_CHANGE","STATION_CLOSURE","STOP_CLOSURE","REDUCED_SERVICE","CANCELLATION","TRACK_CHANGE","STATION_ISSUE","NO_SERVICE"]);
+// ---------- Live transit (MBTA V3 API through /api/mbta) ----------
+const live = {state:"loading", alerts:[], stations:{}, at:null, msg:"", bus:null, busState:"loading"};
+const SERVICE_EFFECTS = new Set(["DELAY","SUSPENSION","SHUTTLE","DETOUR","SERVICE_CHANGE","STATION_CLOSURE","STOP_CLOSURE","REDUCED_SERVICE","CANCELLATION","TRACK_CHANGE","STATION_ISSUE","NO_SERVICE","STOP_MOVED","STOP_SHOVELING","SNOW_ROUTE"]);
 const prettyEffect = e => String(e||"alert").toLowerCase().replace(/_/g," ");
 // Red Line stations a ClassHop trip can pass through (Davis–Porter–Harvard–Central–Kendall/MIT)
 const SEGMENT = {
@@ -652,20 +738,29 @@ const SEGMENT = {
   "davis-kendall":{ids:["place-dav","place-portr","place-harsq","place-cntsq","place-knncl"],names:["Davis","Porter","Harvard","Central","Kendall"]}
 };
 const ALL_OURS = SEGMENT["davis-kendall"];
+const routesOf = a => (a.attributes.informed_entity||[]).map(e=>e.route);
+const redAlerts = () => live.alerts.filter(a=>routesOf(a).includes("Red"));
+const busAlerts = r => live.alerts.filter(a=>routesOf(a).includes(r));
 function alertTouches(a, seg=ALL_OURS){
-  const ents = a.attributes.informed_entity||[];
-  const lineWide = ents.length>0 && ents.every(e=>e.route==="Red" && !e.stop);
+  const ents = (a.attributes.informed_entity||[]).filter(e=>e.route==="Red");
+  const lineWide = ents.length>0 && ents.every(e=>!e.stop);
   const byStop = ents.some(e=>seg.ids.includes(e.stop));
   const text = (a.attributes.header||"");
   const byName = seg.names.some(n=>new RegExp("\\b"+n+"\\b").test(text));
   return lineWide || byStop || byName;
 }
 function liveAlertFor(l){
-  if(live.state!=="ok" || !l.travel || l.travel.mode!=="transit") return "";
-  const seg=SEGMENT[[CAMPUS[l.A.campus].station, CAMPUS[l.B.campus].station].sort().join("-")];
-  if(!seg) return "";
-  const hit=live.alerts.find(a=>alertTouches(a,seg));
-  return hit ? `<b>Red Line alert right now (${esc(prettyEffect(hit.attributes.effect))}):</b> ${esc(hit.attributes.short_header||hit.attributes.header)} Today this trip may take longer.` : "";
+  if(live.state!=="ok" || !l.travel) return "";
+  if(l.travel.mode==="transit"){
+    const seg=SEGMENT[[CAMPUS[l.A.campus].station, CAMPUS[l.B.campus].station].sort().join("-")];
+    const hit=seg && redAlerts().find(a=>alertTouches(a,seg));
+    return hit ? `<b>Red Line alert right now (${esc(prettyEffect(hit.attributes.effect))}):</b> ${esc(hit.attributes.short_header||hit.attributes.header)} Today this trip may take longer.` : "";
+  }
+  if(l.travel.mode==="bus"){
+    const r=busRoute(l.A.campus,l.B.campus), hit=r && busAlerts(r)[0];
+    return hit ? `<b>Bus ${esc(r)} alert right now (${esc(prettyEffect(hit.attributes.effect))}):</b> ${esc(hit.attributes.short_header||hit.attributes.header)} Today this trip may take longer.` : "";
+  }
+  return "";
 }
 async function getJSON(url){
   const r = await fetch(url, {headers:{accept:"application/json"}});
@@ -675,6 +770,7 @@ async function getJSON(url){
   if(!r.ok) throw Object.assign(new Error(body.error||("MBTA returned "+r.status)),{code:"api"});
   return body;
 }
+const BUS_PLACES = ["harvard","mit","tufts"];
 async function loadLive(){
   try{
     const [al, ...preds] = await Promise.all([
@@ -686,34 +782,122 @@ async function loadLive(){
     live.state="ok"; live.at=new Date();
   }catch(e){
     live.state = live.state==="ok" ? "ok" : "error";
-    live.msg = e.code==="absent" ? "Live Red Line data runs on the public ClassHop site, where a small server function talks to the MBTA. It isn't available in this preview."
+    live.msg = e.code==="absent" ? "Live transit data runs on the public ClassHop site, where a small server function talks to the MBTA. It isn't available in this preview."
       : "The MBTA's live data didn't load just now. ClassHop still works with average times. It will try again in a minute.";
+  }
+  if(live.state==="ok"){
+    try{
+      const res = await Promise.all(BUS_PLACES.map(p=>getJSON("/api/mbta?kind=buspreds&at="+p)));
+      live.bus = {}; BUS_PLACES.forEach((p,i)=>live.bus[p]=res[i]); live.busState="ok";
+    }catch(e){ live.busState = live.bus ? "ok" : "error"; }
   }
   renderLive(); renderResults();
 }
+async function loadBusPlan(){
+  try{
+    const plan = await getJSON("/api/mbta?kind=busplan");
+    if(plan && plan.routes){
+      busPlan = {source:"mbta", date:plan.date, routes:plan.routes};
+      const d = plan.date ? new Date(plan.date+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",day:"numeric",month:"short"}) : "the next weekday";
+      const fromPlan = r => { const x=plan.routes[r] && plan.routes[r].out; return x && x.headway && x.ride && x.board && x.alight; };
+      const desc = (r,to) => { const x=busLeg(r,"out"); return `route ${r} every ~${x.headway} min, ${x.ride} min Harvard → ${to} (${fromPlan(r)?"MBTA timetable for "+d:"estimate"})`; };
+      $("busSource").textContent = `Bus times: ${desc("1","MIT")}; ${desc("96","Tufts")}.`;
+      renderResults();
+    }
+  }catch(e){ /* keep the estimates */ }
+}
+const minsUntil = (list, keep) => { const now=Date.now(); return (list||[]).filter(p=>{const a=p.attributes; return keep(p) && (a.departure_time||a.arrival_time) && !["SKIPPED","CANCELLED"].includes(a.schedule_relationship);})
+  .map(p=>Math.round((Date.parse(p.attributes.departure_time||p.attributes.arrival_time)-now)/60000)).filter(m=>m>=0).sort((a,b)=>a-b).slice(0,2); };
+const fmtMins = (arr, none="none predicted") => arr.length ? arr.map(m=>m===0?"now":m+" min").join(", ") : none;
+function busRows(place){
+  const body = live.bus && live.bus[place]; if(!body) return "";
+  const routes = {}; (body.included||[]).filter(x=>x.type==="route").forEach(r=>routes[r.id]=r.attributes);
+  const wanted = place==="harvard" ? ["1","96"] : place==="mit" ? ["1"] : ["96"];
+  return wanted.map(r=>{
+    const dests = (routes[r] && routes[r].direction_destinations) || [];
+    const harvardDir = dests.findIndex(d=>/harvard/i.test(d||""));
+    const dir = place==="harvard" ? (harvardDir>=0 ? 1-harvardDir : 0) : (harvardDir>=0 ? harvardDir : 1);
+    const label = place==="harvard" ? (r==="1" ? "Bus 1 to MIT" : "Bus 96 to Davis & Tufts") : "Bus "+r+" to Harvard";
+    const list = (body.data||[]).filter(p=>p.relationships && p.relationships.route && p.relationships.route.data && p.relationships.route.data.id===r);
+    return `<div class="dir"><span>${esc(label)}</span><span class="mins">${fmtMins(minsUntil(list,p=>p.attributes.direction_id===dir))}</span></div>`;
+  }).join("");
+}
+function alertList(list){ return list.map(a=>`<div class="alert"><b>${esc(prettyEffect(a.attributes.effect))}:</b> ${esc(a.attributes.short_header||a.attributes.header)}</div>`).join(""); }
 function renderLive(){
   const dot=$("liveDot"), body=$("liveBody");
   dot.classList.toggle("on", live.state==="ok");
   if(live.state==="loading") return;
   if(live.state!=="ok"){ body.innerHTML=`<p class="muted">${esc(live.msg)}</p>`; $("liveTime").textContent=""; return; }
   $("liveTime").textContent = "MBTA live data · updated " + live.at.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",second:"2-digit"}) + " · refreshes every minute";
-  const now=Date.now();
-  const next = (list,dir) => list.filter(p=>{const a=p.attributes; return a.direction_id===dir && (a.departure_time||a.arrival_time) && !["SKIPPED","CANCELLED"].includes(a.schedule_relationship);})
-    .map(p=>Math.round((Date.parse(p.attributes.departure_time||p.attributes.arrival_time)-now)/60000)).filter(m=>m>=0).sort((a,b)=>a-b).slice(0,2);
-  const fmtMins = arr => arr.length ? arr.map(m=>m===0?"now":m+" min").join(", ") : "no trains predicted";
   const cards = Object.keys(MBTA_STOP).map(k=>`<div class="station"><h3>${esc(STATIONS[k].name)}</h3>
-      <div class="dir"><span>to Alewife</span><span class="mins">${fmtMins(next(live.stations[k],1))}</span></div>
-      <div class="dir"><span>to Ashmont / Braintree</span><span class="mins">${fmtMins(next(live.stations[k],0))}</span></div></div>`).join("");
-  const rel = live.alerts.filter(a=>alertTouches(a)).slice(0,3);
-  const other = live.alerts.filter(a=>!alertTouches(a));
-  const alerts = (rel.length ? `<div class="alerts">${rel.map(a=>`<div class="alert"><b>${esc(prettyEffect(a.attributes.effect))}:</b> ${esc(a.attributes.short_header||a.attributes.header)}</div>`).join("")}</div>`
-    : `<p class="muted"><b>No alerts between Davis and Kendall/MIT right now.</b> Your T trips should run normally.</p>`)
+      <div class="dir"><span>to Alewife</span><span class="mins">${fmtMins(minsUntil(live.stations[k],p=>p.attributes.direction_id===1),"no trains predicted")}</span></div>
+      <div class="dir"><span>to Ashmont / Braintree</span><span class="mins">${fmtMins(minsUntil(live.stations[k],p=>p.attributes.direction_id===0),"no trains predicted")}</span></div></div>`).join("");
+  const reds = redAlerts(), rel = reds.filter(a=>alertTouches(a)).slice(0,3), other = reds.filter(a=>!alertTouches(a));
+  const redAlertsHTML = (rel.length ? `<div class="alerts">${alertList(rel)}</div>`
+    : `<p class="muted"><b>No Red Line alerts between Davis and Kendall/MIT right now.</b></p>`)
     + (other.length ? `<details class="more"><summary class="muted">${other.length} ${other.length===1?"alert":"alerts"} elsewhere on the Red Line (not on your route)</summary><div class="stack" style="margin-top:8px">${other.map(a=>`<p class="muted"><b>${esc(prettyEffect(a.attributes.effect))}:</b> ${esc(a.attributes.short_header||a.attributes.header)}</p>`).join("")}</div></details>` : "");
-  body.innerHTML = `<div class="stack"><div class="stations">${cards}</div>${alerts}<p class="muted">Your week above uses average waits. Use this panel on the day itself.</p></div>`;
+  let busHTML;
+  if(live.busState==="ok"){
+    const bcards = [["harvard","Harvard Square"],["mit","MIT, Mass Ave"],["tufts","Tufts, College Ave"]].map(([p,n])=>`<div class="station"><h3>${n}</h3>${busRows(p)}</div>`).join("");
+    const ba = [...busAlerts("1"),...busAlerts("96")].filter((a,i,arr)=>arr.indexOf(a)===i).slice(0,3);
+    busHTML = `<div class="stations">${bcards}</div>` + (ba.length ? `<div class="alerts">${alertList(ba)}</div>` : `<p class="muted"><b>No alerts on bus routes 1 or 96 right now.</b></p>`);
+  } else busHTML = `<p class="muted">Live bus times didn't load just now. They'll try again in a minute.</p>`;
+  body.innerHTML = `<div class="stack"><p class="eyebrow">Red Line</p><div class="stations">${cards}</div>${redAlertsHTML}<p class="eyebrow" style="margin-top:6px">Buses</p>${busHTML}<p class="muted">Your week above uses typical waits. Use this panel on the day itself.</p></div>`;
 }
 loadLive();
+loadBusPlan();
 setInterval(()=>{ if(!document.hidden) loadLive(); }, 60000);
 
+// ---------- Tabs (each view has its own #link) ----------
+const VIEWS=["week","classes","today","about"];
+function showView(v){
+  if(!VIEWS.includes(v)) v="week";
+  VIEWS.forEach(x=>{ $("view-"+x).hidden = x!==v; const t=$("tab-"+x); t.setAttribute("aria-selected", String(x===v)); t.tabIndex = x===v?0:-1; });
+}
+function go(v){ if(location.hash.slice(1)===v) showView(v); else location.hash=v; const nav=document.querySelector(".tabs"); if(nav.getBoundingClientRect().top<0 || window.scrollY>nav.offsetTop) window.scrollTo({top:nav.offsetTop-8}); }
+document.querySelector(".tablist").addEventListener("click",e=>{ const b=e.target.closest("[data-view]"); if(b) go(b.dataset.view); });
+document.querySelector(".tablist").addEventListener("keydown",e=>{
+  if(!["ArrowLeft","ArrowRight"].includes(e.key)) return;
+  const i=VIEWS.indexOf(location.hash.slice(1)||"week"), n=VIEWS[(i+(e.key==="ArrowRight"?1:VIEWS.length-1))%VIEWS.length];
+  go(n); $("tab-"+n).focus();
+});
+document.addEventListener("click",e=>{ const b=e.target.closest("[data-go]"); if(b) go(b.dataset.go); });
+window.addEventListener("hashchange",()=>showView(location.hash.slice(1)));
+
+// ---------- "Copy my link": the whole week packed into the link ----------
+const b64e = str => btoa(unescape(encodeURIComponent(str))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+const b64d = str => decodeURIComponent(escape(atob(str.replace(/-/g,"+").replace(/_/g,"/"))));
+function weekToCode(){
+  return b64e(JSON.stringify({v:1,
+    c:state.classes.filter(valid).map(c=>[c.name,c.campus,c.days.reduce((m,d)=>m|(1<<d),0),c.start,c.end]),
+    s:{m:state.settings.mode,b:state.settings.hasBike?1:0,w:state.settings.winter?1:0}}));
+}
+function loadFromLink(){
+  let code=null; try{ code=new URLSearchParams(location.search).get("w"); }catch(e){}
+  if(!code) return;
+  try{
+    const d=JSON.parse(b64d(code));
+    const list=(d.c||[]).filter(x=>Array.isArray(x)&&CAMPUS[x[1]]).map(x=>({name:String(x[0]||"").slice(0,80),campus:x[1],days:[0,1,2,3,4].filter(i=>x[2]&(1<<i)),start:x[3],end:x[4]}));
+    state.classes=withIds(list); state.isSample=false;
+    if(d.s){ state.settings.mode=["best","walk","transit","bus","shuttle","bike"].includes(d.s.m)?d.s.m:"best"; state.settings.hasBike=!!d.s.b; state.settings.winter=!!d.s.w; }
+    save();
+    try{ history.replaceState(null,"",location.pathname+location.hash); }catch(e){}
+    setTimeout(()=>toast("Week loaded from your link"),300);
+  }catch(e){ setTimeout(()=>toast("That link couldn't be read. Showing your saved week."),300); }
+}
+document.querySelectorAll(".js-link").forEach(btn=>btn.addEventListener("click",()=>{
+  if(!state.classes.filter(valid).length){ toast("Add a class first"); return; }
+  const url=location.origin+location.pathname+"?w="+weekToCode()+"#week";
+  const fallback=()=>{
+    let box=$("linkBox");
+    if(!box){ box=document.createElement("div"); box.id="linkBox"; box.className="panel stack"; box.innerHTML=`<label for="linkField" class="eyebrow">Your week's link. Copy it and open it on any device</label><input id="linkField" readonly style="width:100%;padding:8px;border:1px solid var(--line);border-radius:6px;font-family:var(--f-mono);font-size:12px">`; $("view-week").prepend(box); }
+    $("linkField").value=url; go("week"); $("linkField").select(); toast("Select the link and copy it");
+  };
+  try{ navigator.clipboard.writeText(url).then(()=>toast("Link copied. Open it on any device to see this week"),fallback); }catch(e){ fallback(); }
+}));
+
+loadFromLink();
+showView(location.hash.slice(1));
 renderDeadline(); render();
 })();
 </script>
