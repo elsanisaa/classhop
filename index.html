@@ -11,52 +11,45 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Source+Sans+3:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
-/* Layout: a transit-board planner. Inputs on the left, the week drawn like a line map on the right; legs between classes are the "routes". */
+/* Layout: a calm campus-planner page. Serif headings and white panels on a light stone ground,
+   one deep garnet accent, the week drawn as a timetable with "routes" between classes.
+   Deliberately light-only: it sets its own background and every color. */
 :root{
-  --paper:#F4F6F5; --panel:#FFFFFF; --ink:#141B19; --muted:#56625E; --line:#D9DFDC; --soft:#EBEFED;
-  --accent:#2438C9; --accent-ink:#FFFFFF;
-  --ok:#1C7F47; --tight:#A86A00; --late:#C22F38; --clash:#7438B8;
-  --ok-bg:#E3F3E9; --tight-bg:#FBF0DA; --late-bg:#FBE4E5; --clash-bg:#EFE5FA;
-  --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
-  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+  --paper:#F5F4F2; --panel:#FFFFFF; --ink:#1E2125; --muted:#5E646B; --line:#E2E0DC; --soft:#F0EEEB;
+  --accent:#8F1D2C; --accent-soft:#F6E9EA; --accent-ink:#FFFFFF;
+  --ok:#2E7D4F; --tight:#9A6400; --late:#B3261E; --clash:#6B3FA0;
+  --ok-bg:#E6F2EA; --tight-bg:#FBF1DE; --late-bg:#FBE7E5; --clash-bg:#EFE7F8;
+  --f-display:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --f-body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
-  --r:10px;
+  --r:6px;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --paper:#0F1413; --panel:#171E1C; --ink:#E6ECE9; --muted:#9BA8A3; --line:#2A3431; --soft:#1E2725;
-  --accent:#8C9BFF; --accent-ink:#0F1413;
-  --ok:#53C786; --tight:#F0B44C; --late:#FF7277; --clash:#B78CF5;
-  --ok-bg:#16301F; --tight-bg:#33270F; --late-bg:#3A1A1C; --clash-bg:#2A1D3D;
-  color-scheme:dark}}
-:root[data-theme="dark"]{
-  --paper:#0F1413; --panel:#171E1C; --ink:#E6ECE9; --muted:#9BA8A3; --line:#2A3431; --soft:#1E2725;
-  --accent:#8C9BFF; --accent-ink:#0F1413;
-  --ok:#53C786; --tight:#F0B44C; --late:#FF7277; --clash:#B78CF5;
-  --ok-bg:#16301F; --tight-bg:#33270F; --late-bg:#3A1A1C; --clash-bg:#2A1D3D;
-  color-scheme:dark}
 *{box-sizing:border-box}
-body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
-.wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
-h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.1}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+body::before{content:"";display:block;height:6px;background:var(--accent);margin-inline:calc(-1 * max(16px,env(safe-area-inset-left,0px)));margin-bottom:28px}
+.wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15;font-weight:600}
 button,input,select{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 
 /* Header */
-header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;border-bottom:3px solid var(--ink);padding-bottom:14px}
-.brand h1{font-size:clamp(30px,5vw,46px);font-weight:800;font-stretch:112%;letter-spacing:-.01em}
-.brand p{margin:6px 0 0;color:var(--muted);max-width:60ch}
-.deadline{display:flex;align-items:center;gap:10px;background:var(--ink);color:var(--paper);border-radius:999px;padding:8px 16px 8px 8px;font-size:13px}
-.deadline b{font-family:var(--f-mono);background:var(--paper);color:var(--ink);border-radius:999px;padding:4px 10px;font-size:13px;white-space:nowrap}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px 24px;border-bottom:1px solid var(--line);padding-bottom:22px}
+.brand .kicker{font-size:12px;max-width:none;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:0 0 6px}
+.brand h1{font-size:clamp(36px,5.5vw,56px);font-weight:700;letter-spacing:-.015em}
+.brand p{margin:10px 0 0;color:var(--muted);max-width:62ch;font-size:17px}
+.deadline{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:4px;padding:10px 16px;font-size:14px}
+.deadline b{font-family:var(--f-display);font-size:26px;font-weight:700;color:var(--accent);white-space:nowrap;line-height:1}
 
 .grid{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:20px;align-items:start}
 @media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}.grid>.stack:last-child{order:-1}}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
-.panel h2{font-size:18px;font-weight:700;font-stretch:105%;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px;min-width:0;box-shadow:0 1px 2px rgba(30,33,37,.04)}
+.panel h2{font-size:21px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:8px}
 .eyebrow{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .stack{display:flex;flex-direction:column;gap:14px}
 
@@ -92,7 +85,7 @@ header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:spac
 .stations{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 @media (max-width:640px){.stations{grid-template-columns:minmax(0,1fr)}}
 .station{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-width:0}
-.station h3{font-size:15px;font-weight:700;font-stretch:108%}
+.station h3{font-size:17px;font-weight:600}
 .dir{display:flex;justify-content:space-between;gap:8px;font-size:13px}
 .dir span:first-child{color:var(--muted)}
 .dir .mins{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
@@ -114,7 +107,7 @@ header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:spac
 .stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
 @media (max-width:640px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .stat{border-radius:8px;padding:10px 12px;background:var(--soft);display:flex;flex-direction:column;gap:2px;min-width:0}
-.stat .n{font-family:var(--f-display);font-weight:800;font-size:28px;font-variant-numeric:tabular-nums;line-height:1}
+.stat .n{font-family:var(--f-display);font-weight:700;font-size:30px;font-variant-numeric:tabular-nums;line-height:1}
 .stat .l{font-size:12px;color:var(--muted)}
 .stat.ok{background:var(--ok-bg)} .stat.ok .n{color:var(--ok)}
 .stat.tight{background:var(--tight-bg)} .stat.tight .n{color:var(--tight)}
@@ -128,7 +121,7 @@ header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:spac
 .daytabs .dot{position:absolute;top:4px;right:6px;width:7px;height:7px;border-radius:50%}
 .board-scroll{overflow-x:auto}
 .board{display:grid;grid-template-columns:44px repeat(5,minmax(110px,1fr));gap:0 8px;min-width:640px}
-.colhead{font-family:var(--f-display);font-weight:700;font-stretch:110%;font-size:14px;padding:4px 2px 8px;border-bottom:2px solid var(--ink);text-transform:uppercase;letter-spacing:.06em}
+.colhead{font-family:var(--f-body);font-weight:700;font-size:13px;padding:4px 2px 8px;border-bottom:2px solid var(--accent);text-transform:uppercase;letter-spacing:.1em;color:var(--ink)}
 .axis,.col{position:relative}
 .axis span{position:absolute;right:4px;transform:translateY(-50%);font-family:var(--f-mono);font-size:11px;color:var(--muted)}
 .col{border-left:1px dashed var(--line)}
@@ -137,7 +130,7 @@ header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:spac
 .block{position:absolute;left:6px;right:6px;border-radius:6px;padding:4px 7px;color:#fff;overflow:hidden;font-size:12px;line-height:1.25;z-index:1}
 .block b{display:block;font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .block .t{font-family:var(--f-mono);font-size:10.5px;opacity:.9}
-.block .code{font-family:var(--f-display);font-weight:800;font-size:10px;letter-spacing:.08em;opacity:.95}
+.block .code{font-family:var(--f-body);font-weight:700;font-size:10px;letter-spacing:.1em;opacity:.9}
 .route{position:absolute;left:50%;width:4px;transform:translateX(-50%);border-radius:2px;z-index:2}
 .route.ok{background:var(--ok)} .route.tight{background:var(--tight)} .route.late,.route.clash{background:var(--late)}
 .chip{position:absolute;left:50%;transform:translate(-50%,-50%);z-index:3;font-family:var(--f-mono);font-size:10.5px;font-weight:600;white-space:nowrap;border-radius:999px;padding:2px 7px;border:1.5px solid;background:var(--panel)}
@@ -184,6 +177,7 @@ footer{font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);padd
 <div class="wrap">
   <header class="top">
     <div class="brand">
+      <p class="kicker">Unofficial student project · HKS DPI-681</p>
       <h1>ClassHop</h1>
       <p>Cross-registering at HLS, HBS, MIT or Fletcher? Enter your week and see, before you commit, whether you can get from one class to the next in time.</p>
     </div>
@@ -651,18 +645,26 @@ function toast(msg){ const t=$("toast"); t.textContent=msg; t.hidden=false; clea
 const live = {state:"loading", alerts:[], stations:{}, at:null, msg:""};
 const SERVICE_EFFECTS = new Set(["DELAY","SUSPENSION","SHUTTLE","DETOUR","SERVICE_CHANGE","STATION_CLOSURE","STOP_CLOSURE","REDUCED_SERVICE","CANCELLATION","TRACK_CHANGE","STATION_ISSUE","NO_SERVICE"]);
 const prettyEffect = e => String(e||"alert").toLowerCase().replace(/_/g," ");
-function alertTouches(a, stationKeys){
-  const ids = stationKeys.map(k=>MBTA_STOP[k]), names = stationKeys.map(k=>STATIONS[k].name.split("/")[0]);
+// Red Line stations a ClassHop trip can pass through (Davis–Porter–Harvard–Central–Kendall/MIT)
+const SEGMENT = {
+  "harvard-kendall":{ids:["place-harsq","place-cntsq","place-knncl"],names:["Harvard","Central","Kendall"]},
+  "davis-harvard":{ids:["place-dav","place-portr","place-harsq"],names:["Davis","Porter","Harvard"]},
+  "davis-kendall":{ids:["place-dav","place-portr","place-harsq","place-cntsq","place-knncl"],names:["Davis","Porter","Harvard","Central","Kendall"]}
+};
+const ALL_OURS = SEGMENT["davis-kendall"];
+function alertTouches(a, seg=ALL_OURS){
   const ents = a.attributes.informed_entity||[];
-  const lineWide = ents.some(e=>e.route==="Red" && !e.stop);
-  const byStop = ents.some(e=>ids.includes(e.stop));
-  const byName = names.some(n=>(a.attributes.header||"").includes(n));
-  return lineWide || byStop || byName || ["DELAY","SUSPENSION","SHUTTLE","REDUCED_SERVICE"].includes(a.attributes.effect);
+  const lineWide = ents.length>0 && ents.every(e=>e.route==="Red" && !e.stop);
+  const byStop = ents.some(e=>seg.ids.includes(e.stop));
+  const text = (a.attributes.header||"");
+  const byName = seg.names.some(n=>new RegExp("\\b"+n+"\\b").test(text));
+  return lineWide || byStop || byName;
 }
 function liveAlertFor(l){
   if(live.state!=="ok" || !l.travel || l.travel.mode!=="transit") return "";
-  const keys=[CAMPUS[l.A.campus].station, CAMPUS[l.B.campus].station];
-  const hit=live.alerts.find(a=>alertTouches(a,keys));
+  const seg=SEGMENT[[CAMPUS[l.A.campus].station, CAMPUS[l.B.campus].station].sort().join("-")];
+  if(!seg) return "";
+  const hit=live.alerts.find(a=>alertTouches(a,seg));
   return hit ? `<b>Red Line alert right now (${esc(prettyEffect(hit.attributes.effect))}):</b> ${esc(hit.attributes.short_header||hit.attributes.header)} Today this trip may take longer.` : "";
 }
 async function getJSON(url){
@@ -694,17 +696,19 @@ function renderLive(){
   dot.classList.toggle("on", live.state==="ok");
   if(live.state==="loading") return;
   if(live.state!=="ok"){ body.innerHTML=`<p class="muted">${esc(live.msg)}</p>`; $("liveTime").textContent=""; return; }
-  $("liveTime").textContent = "MBTA live data · updated " + live.at.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+  $("liveTime").textContent = "MBTA live data · updated " + live.at.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",second:"2-digit"}) + " · refreshes every minute";
   const now=Date.now();
-  const next = (list,dir) => list.filter(p=>p.attributes.direction_id===dir && p.attributes.departure_time)
-    .map(p=>Math.round((Date.parse(p.attributes.departure_time)-now)/60000)).filter(m=>m>=0).sort((a,b)=>a-b).slice(0,2);
-  const fmtMins = arr => arr.length ? arr.map(m=>m===0?"now":m+" min").join(", ") : "no prediction";
+  const next = (list,dir) => list.filter(p=>{const a=p.attributes; return a.direction_id===dir && (a.departure_time||a.arrival_time) && !["SKIPPED","CANCELLED"].includes(a.schedule_relationship);})
+    .map(p=>Math.round((Date.parse(p.attributes.departure_time||p.attributes.arrival_time)-now)/60000)).filter(m=>m>=0).sort((a,b)=>a-b).slice(0,2);
+  const fmtMins = arr => arr.length ? arr.map(m=>m===0?"now":m+" min").join(", ") : "no trains predicted";
   const cards = Object.keys(MBTA_STOP).map(k=>`<div class="station"><h3>${esc(STATIONS[k].name)}</h3>
       <div class="dir"><span>to Alewife</span><span class="mins">${fmtMins(next(live.stations[k],1))}</span></div>
       <div class="dir"><span>to Ashmont / Braintree</span><span class="mins">${fmtMins(next(live.stations[k],0))}</span></div></div>`).join("");
-  const rel = live.alerts.filter(a=>alertTouches(a,Object.keys(MBTA_STOP))).slice(0,3);
-  const alerts = rel.length ? `<div class="alerts">${rel.map(a=>`<div class="alert"><b>${esc(prettyEffect(a.attributes.effect))}:</b> ${esc(a.attributes.short_header||a.attributes.header)}</div>`).join("")}</div>`
-    : `<p class="muted">No Red Line service alerts affecting Harvard, Kendall/MIT or Davis right now.</p>`;
+  const rel = live.alerts.filter(a=>alertTouches(a)).slice(0,3);
+  const other = live.alerts.filter(a=>!alertTouches(a));
+  const alerts = (rel.length ? `<div class="alerts">${rel.map(a=>`<div class="alert"><b>${esc(prettyEffect(a.attributes.effect))}:</b> ${esc(a.attributes.short_header||a.attributes.header)}</div>`).join("")}</div>`
+    : `<p class="muted"><b>No alerts between Davis and Kendall/MIT right now.</b> Your T trips should run normally.</p>`)
+    + (other.length ? `<details class="more"><summary class="muted">${other.length} ${other.length===1?"alert":"alerts"} elsewhere on the Red Line (not on your route)</summary><div class="stack" style="margin-top:8px">${other.map(a=>`<p class="muted"><b>${esc(prettyEffect(a.attributes.effect))}:</b> ${esc(a.attributes.short_header||a.attributes.header)}</p>`).join("")}</div></details>` : "");
   body.innerHTML = `<div class="stack"><div class="stations">${cards}</div>${alerts}<p class="muted">Your week above uses average waits. Use this panel on the day itself.</p></div>`;
 }
 loadLive();

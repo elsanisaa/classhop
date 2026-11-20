@@ -20,7 +20,9 @@ export default async (req) => {
   if (kind === "predictions") {
     const stop = url.searchParams.get("stop");
     if (!STOPS.has(stop)) return json({ error: "Unknown stop" }, 400);
-    path = `/predictions?filter[stop]=${stop}&filter[route]=Red&sort=departure_time&page[limit]=12`;
+    // No sort/limit here: entries without times (e.g. skipped stops) would crowd out real ones.
+    // The page picks the next two departures per direction itself.
+    path = `/predictions?filter[stop]=${stop}&filter[route]=Red&fields[prediction]=arrival_time,departure_time,direction_id,schedule_relationship`;
   } else if (kind === "alerts") {
     path = `/alerts?filter[route]=Red&filter[datetime]=NOW`;
   } else {
